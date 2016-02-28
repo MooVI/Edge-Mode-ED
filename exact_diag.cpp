@@ -74,7 +74,8 @@ int main() {
 
     typedef Eigen::Matrix<mpreal, Eigen::Dynamic, Eigen::Dynamic> Matrixww;
     typedef Eigen::Matrix<mpreal, Eigen::Dynamic, 1> Vectorw;
-
+    typedef Eigen::Array<mpreal, Eigen::Dynamic, 1> Arrayw;
+    
     const double r = 0.05;
     //const double J2 = 1.0;
     const double J = 1.0;
@@ -83,7 +84,7 @@ int main() {
     std::ofstream outfile;
     outfile.open(std::string("diffsJ2_noV_") + std::to_string(width), std::ios::trunc);
     
-    for (double J2 = 0.5; J2 < 1.21; J2 += 0.01) {
+    //for (double J2 = 0.5; J2 < 1.21; J2 += 0.01) {
         Matrixww H(pows2(width), pows2(width));
 
         //std::cout<< std::to_string(sigma_z_j(0, 0, 0, pows2)*((0+1) < width));
@@ -92,8 +93,8 @@ int main() {
             for (ulong j = 0; j < pows2(width); j++) {
                 for (ulong jsite = 0; jsite < width; jsite++)
                     H(i, j) += -f * sigma_x_j(i, j, jsite, pows2)
-                    - J * sigma_z_j(i, j, jsite, pows2) * sigma_z_j(i, j, jsite + 1, pows2)*(((jsite + 1) < width))
-                    - J2 * sigma_z_j(i, j, jsite, pows2) * sigma_z_j(i, j, jsite + 2, pows2)*(((jsite + 2) < width));
+                    - J * sigma_z_j(i, j, jsite, pows2) * sigma_z_j(i, j, jsite + 1, pows2)*(((jsite + 1) < width));
+                    //- J2 * sigma_z_j(i, j, jsite, pows2) * sigma_z_j(i, j, jsite + 2, pows2)*(((jsite + 2) < width));
                     //- V * sigma_x_j_x_m(i, j, jsite, jsite + 1, pows2)*((jsite + 1) < width);
             }
         }
@@ -104,14 +105,24 @@ int main() {
         //std::cout << H << std::endl << std::endl;
         Eigen::SelfAdjointEigenSolver<Matrixww> es(H);
         auto eigs = es.eigenvalues();
+        auto evecs = es.eigenvectors();
+        const int ispec = 32;
+        auto spec = evecs.col(ispec).array();
         //outfile << eigs.transpose() << std::endl;
-        mpreal avdistance = 0;
-        for (int i = 0; i < eigs.size() / 2; i++) {
-            avdistance += 2 * fabs((eigs[2 * i] - eigs[2 * i + 1])/ (eigs[2 * i] + eigs[2 * i + 1]));
+        Arrayw overlap = Vectorw::Zero(pows2(width));
+        Arrayw sigz (pows2(width));
+        for (int i=0; i<sigz.size();i++){
+            sigz[i] = i % 2 == 0 ? -1 : 1; 
         }
-        outfile << J2 <<' '<< avdistance << std::endl;
-        std::cout << J2 << std::endl;
-    }
+        for (int i = 0; i < sigz.size(); i++) {
+                overlap[i] += (sigz*spec*evecs.col(i).array()).sum();
+        }
+        outfile << overlap << std::endl;
+        outfile << eigs << std::endl;
+        std::cout << eigs[ispec] << std::endl;
+        plotter.plot2(eigs, overlap);
+        plotter.wait();
+    //}
     return 0;
     
 }
