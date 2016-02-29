@@ -5,7 +5,7 @@
  * Created on 13 October 2014, 11:54
  */
 
-#if 1
+#if 0
 
 #include<Eigen/Dense>
 #include<Eigen/unsupported/Eigen/MPRealSupport>
@@ -59,7 +59,10 @@ inline int sigma_x_j(ulong x, ulong y, ulong j, powersoftwo<N> pows) {
 
 template <int N>
 inline int sigma_x_j_x_m(ulong x, ulong y, ulong j, ulong m, powersoftwo<N> pows) {
-    return ((x | pows(j) | pows(m)) == (y | pows(j) | pows(m))) and (((x^y) & pows(j)) >> j) and (((x^y) & pows(m)) >> m);
+    return (j==m and x==y) or
+            (((x | pows(j) | pows(m)) == (y | pows(j) | pows(m))) 
+            and (((x^y) & pows(j)) >> j) 
+            and (((x^y) & pows(m)) >> m));
 }
 
 /*

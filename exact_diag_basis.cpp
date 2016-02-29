@@ -47,7 +47,6 @@ public:
     }
 };
 
-
 /* The basis is |downs> + |ups> -> MSB not set, |downs> - |highs> -> MSB set */
 
 
@@ -58,17 +57,17 @@ inline int sigma_z_j(ulong x, ulong y, ulong j, powersoftwo<N> pows, ulong width
 
 template <int N>
 inline int sigma_x_j(ulong x, ulong y, ulong j, powersoftwo<N> pows, ulong widthmask) {
-    return (((x | pows(j)) == (y | pows(j))) and (((x^y) & pows(j)) >> j))*(-2*((j & x & widthmask) >> widthmask)+1);
+    return (((x | pows(j)) == (y | pows(j))) and (((x^y) & pows(j)) >> j))*(-2 * ((j & x & widthmask) >> widthmask) + 1);
 }
 
 template <int N>
 inline int sigma_x_j_x_m(ulong x, ulong y, ulong j, ulong m, powersoftwo<N> pows, ulong widthmask) {
-    return (j==m and x==y) ? 1 : 
-            (((x | pows(j) | pows(m)) == (y | pows(j) | pows(m))) 
-            and (((x^y) & pows(j)) >> j) 
+    return (j == m and x == y) ? 1 :
+            (((x | pows(j) | pows(m)) == (y | pows(j) | pows(m)))
+            and (((x^y) & pows(j)) >> j)
             and (((x^y) & pows(m)) >> m))
-            *(-2*((j & x & widthmask) >> widthmask)+1)
-            *(-2*((m & x & widthmask) >> widthmask)+1);
+            *(-2 * ((j & x & widthmask) >> widthmask) + 1)
+            *(-2 * ((m & x & widthmask) >> widthmask) + 1);
 }
 
 template <int N>
@@ -89,38 +88,57 @@ int main() {
     typedef Eigen::Matrix<mpreal, Eigen::Dynamic, Eigen::Dynamic> Matrixww;
     typedef Eigen::Matrix<mpreal, Eigen::Dynamic, 1> Vectorw;
     typedef Eigen::Array<mpreal, Eigen::Dynamic, 1> Arrayw;
-    
-    const double r = 0.05;
-    //const double J2 = 1.0;
+
+    const double r = 0.2;
+    //const double J2 = 0.00;
     const double J = 1.0;
     const double f = r * J;
     //const double V = r*J2;
-    std::ofstream outfile;
-    outfile.open(std::string("split_basis") + std::to_string(width), std::ios::trunc);
     
-    //for (double J2 = 0.5; J2 < 1.21; J2 += 0.01) {
-        Matrixww HE(pows2(width-1), pows2(width-1));
-        Matrixww HO(pows2(width-1), pows2(Width-1));
+    /*Matrixww test (pows2(width-1), pows2(width-1));
+    
+    for (ulong i = 0; i < pows2(width-1); i++) {
+            
+                for (ulong jsite = 0; jsite < width; jsite++){
+                    test (i, i) += sigma_z_j_z_m(i, i, jsite, jsite + 2, pows2)*(((jsite + 2) < width));
+                }
+            }
+    for (ulong i = 0; i < pows2(width-1); i++) {
+        std::cout<< test(i,i)<< ' ';
+    }
+     */
+    
+    std::ofstream outfile;
+    //outfile.open(std::string("split_basis") + std::to_string(width), std::ios::trunc);
+    std::vector<mpreal> maxoverlap, fs;
+    Matrixww HE(pows2(width - 1), pows2(width - 1));
+    Matrixww HO(pows2(width - 1), pows2(width - 1));
+    
+    NumMethod::ForLoopParams<mpreal> fparams;
+    fparams.numPoints = 100; fparams.start = 0.0; fparams.end = 1.1;
+    auto body = [&](mpreal J2, int i) {
+        HE = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
+        HO = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
 
         //std::cout<< std::to_string(sigma_z_j(0, 0, 0, pows2)*((0+1) < width));
 
-        for (ulong i = 0; i < pows2(width-1); i++) {
-            for (ulong j = 0; j < pows2(width-1); j++) {
-                for (ulong jsite = 0; jsite < width; jsite++){
-                    HE(i, j) += -f * sigma_x_j(i, j, jsite, pows2, pows2(width-1))
-                    - J * sigma_z_j_z_m(i, j, jsite, jsite + 1, pows2)*(((jsite + 1) < width));
-                    //- J2 * sigma_z_j(i, j, jsite, pows2) * sigma_z_j(i, j, jsite + 2, pows2)*(((jsite + 2) < width));
+        for (ulong i = 0; i < pows2(width - 1); i++) {
+            for (ulong j = 0; j < pows2(width - 1); j++) {
+                for (ulong jsite = 0; jsite < width; jsite++) {
+                    HE(i, j) += -f * sigma_x_j(i, j, jsite, pows2, pows2(width - 1))
+                            - J * sigma_z_j_z_m(i, j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
+                            - J2 * sigma_z_j_z_m(i, j, jsite, jsite + 2, pows2)*(((jsite + 2) < width));
                     //- V * sigma_x_j_x_m(i, j, jsite, jsite + 1, pows2)*((jsite + 1) < width);
-                    HO(i, j) += -f * sigma_x_j(~i, ~j, jsite, pows2, pows2(width-1))
-                    - J * sigma_z_j_z_m(~i, ~j, jsite, jsite + 1, pows2)*(((jsite + 1) < width));
-                    //- J2 * sigma_z_j(i, j, jsite, pows2) * sigma_z_j(i, j, jsite + 2, pows2)*(((jsite + 2) < width));
+                    HO(i, j) += -f * sigma_x_j(~i, ~j, jsite, pows2, pows2(width - 1))
+                            - J * sigma_z_j_z_m(~i, ~j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
+                            - J2 * sigma_z_j_z_m(~i, ~j, jsite, jsite + 2, pows2)*(((jsite + 2) < width));
                     //- V * sigma_x_j_x_m(i, j, jsite, jsite + 1, pows2)*((jsite + 1) < width
-                }    
+                }
             }
         }
 
-        
-        
+
+
 
         //std::cout << H << std::endl << std::endl;
         Eigen::SelfAdjointEigenSolver<Matrixww> esE(HE);
@@ -129,26 +147,39 @@ int main() {
         auto eigsO = esO.eigenvalues();
         auto evecsE = esE.eigenvectors();
         auto evecsO = esO.eigenvectors();
-        const int ispec = 32;
+        const int ispec = pows2(width - 2);
         auto spec = evecsE.col(ispec).array();
         //outfile << eigs.transpose() << std::endl;
-        Arrayw overlap = Vectorw::Zero(pows2(width-1));
-        Arrayw sigz (pows2(width-1));
-        for (int i=0; i<sigz.size();i++){
-            sigz[i] = i % 2 == 0 ? 1 : -1; 
+        Arrayw overlap = Vectorw::Zero(pows2(width - 1));
+        Arrayw sigz(pows2(width - 1));
+        for (int i = 0; i < sigz.size(); i++) {
+            sigz[i] = i % 2 == 0 ? 1 : -1;
         }
         for (int i = 0; i < sigz.size(); i++) {
-                overlap[i] += (sigz*spec*evecsO.col(i).array()).sum();
+            overlap[i] += (sigz * spec * evecsO.col(i).array()).sum();
         }
-        outfile << overlap << std::endl;
-        outfile << eigsE << std::endl;
-        outfile << eigsO << std::endl;
-        std::cout << eigsE[ispec] << std::endl;
-        plotter.plot2(eigs, overlap);
-        plotter.wait();
-    //}
-    return 0;
+        fs.push_back(f);
+        maxoverlap.push_back(overlap.abs().maxCoeff());
+        //PlotterData pd;
+        //pd.style = "l";
+        //plotter.plot2(eigsE, overlap, pd);
+        //plotter.wait();
+        return false;
+    };
     
+    NumMethod::EqualSpaceFor forloop; 
+    forloop.loop(body, fparams);
+    //plotter.writeToFile("split_basis", eigsE, eigsO);
+    //std::cout << eigsE[ispec] << ' ' << eigsO[ispec] << std::endl;
+    
+    PlotterData pd;
+    pd.style = "l";
+    pd.input = "Ising_J2_" + std::to_string(width);
+    plotter.plot2(fs, maxoverlap);
+    //plotter.plot2withAnalytic(fs, maxoverlap, [](mpreal x){return sqrt(1-x*x);}, 100, pd);
+    plotter.wait();
+    return 0;
+
 }
 #endif 
 
