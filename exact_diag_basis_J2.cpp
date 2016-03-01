@@ -5,7 +5,7 @@
  * Created on 13 October 2014, 11:54
  */
 
-#if 0
+#if 1
 
 #include<Eigen/Dense>
 #include<Eigen/unsupported/Eigen/MPRealSupport>
@@ -93,7 +93,7 @@ int main() {
     const double J2 = 0.00;
     const double J = 1.0;
     const double f = r * J;
-    //const double V = r*J2;
+    const double V = 0.0;
     
     /*Matrixww test (pows2(width-1), pows2(width-1));
     
@@ -115,8 +115,8 @@ int main() {
     Matrixww HO(pows2(width - 1), pows2(width - 1));
     
     NumMethod::ForLoopParams<mpreal> fparams;
-    fparams.numPoints = 500; fparams.start = 0.0; fparams.end = 1.01;
-    auto body = [&](mpreal V, int i) {
+    fparams.numPoints = 100; fparams.start = 0.0; fparams.end = 1.01;
+    auto body = [&](mpreal J2, int i) {
         HE = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
         HO = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
 
@@ -159,7 +159,7 @@ int main() {
         for (int i = 0; i < sigz.size(); i++) {
             overlap[i] += (sigz * spec * evecsO.col(i).array()).sum();
         }
-        fs.push_back(V);
+        fs.push_back(J2);
         maxoverlap.push_back(overlap.abs().maxCoeff());
         //PlotterData pd;
         //pd.style = "l";
@@ -175,12 +175,13 @@ int main() {
     
     PlotterData pd;
     pd.style = "l";
-    pd.input = "Ising_V_" + std::to_string(width);
-    //plotter.plot2(fs, maxoverlap, pd);
-    plotter.plot2withAnalytic(fs, maxoverlap, [](mpreal x){return sqrt(1/(1.0416 + x*x*(1.04 + 3*x*x)));}, 100, pd);
+    pd.input = "Ising_J_" + std::to_string(width);
+    plotter.plot2(fs, maxoverlap, pd);
+    //plotter.plot2withAnalytic(fs, maxoverlap, [](mpreal x){return sqrt(1/(1.0416 + x*x*(1.04 + 3*x*x)));}, 100, pd);
     plotter.wait();
     return 0;
 
 }
 #endif 
+
 
