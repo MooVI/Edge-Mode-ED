@@ -333,7 +333,6 @@ int main() {
     plotter.plot2(fs, eigdiffsB, pdBe);
     plotter.plot2(fs, maxoverlapB, pdB);
     plotter.wait();
-    plotter.wait();
     return 0;
 
 }
