@@ -49,8 +49,8 @@ OBJECTFILES= \
 CFLAGS=
 
 # CC Compiler Flags
-CCFLAGS=-m64 -lmpfr -lgmp -march=native -Ofast -std=c++14 -pthread
-CXXFLAGS=-m64 -lmpfr -lgmp -march=native -Ofast -std=c++14 -pthread
+CCFLAGS=-m64 -lmpfr -lgmp -march=native -Ofast -pthread
+CXXFLAGS=-m64 -lmpfr -lgmp -march=native -Ofast -pthread
 
 # Fortran Compiler Flags
 FFLAGS=

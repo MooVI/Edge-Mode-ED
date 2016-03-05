@@ -89,7 +89,7 @@
           <incDir>
             <pElem>../..</pElem>
           </incDir>
-          <commandLine>-lmpfr -lgmp -march=native -Ofast -std=c++14 -pthread</commandLine>
+          <commandLine>-lmpfr -lgmp -march=native -Ofast -pthread</commandLine>
         </ccTool>
         <fortranCompilerTool>
           <developmentMode>5</developmentMode>
