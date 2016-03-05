@@ -76,42 +76,42 @@ ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/tp11_1: ${OBJECTFILES}
 ${OBJECTDIR}/exact_diag.o: exact_diag.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -I../.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/exact_diag.o exact_diag.cpp
+	$(COMPILE.cc) -I../.. -I.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/exact_diag.o exact_diag.cpp
 
 ${OBJECTDIR}/exact_diag_basis.o: exact_diag_basis.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -I../.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/exact_diag_basis.o exact_diag_basis.cpp
+	$(COMPILE.cc) -I../.. -I.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/exact_diag_basis.o exact_diag_basis.cpp
 
 ${OBJECTDIR}/exact_diag_basis_J2.o: exact_diag_basis_J2.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -I../.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/exact_diag_basis_J2.o exact_diag_basis_J2.cpp
+	$(COMPILE.cc) -I../.. -I.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/exact_diag_basis_J2.o exact_diag_basis_J2.cpp
 
 ${OBJECTDIR}/exact_diag_basis_f.o: exact_diag_basis_f.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -I../.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/exact_diag_basis_f.o exact_diag_basis_f.cpp
+	$(COMPILE.cc) -I../.. -I.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/exact_diag_basis_f.o exact_diag_basis_f.cpp
 
 ${OBJECTDIR}/exact_diag_basis_xyz.o: exact_diag_basis_xyz.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -I../.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/exact_diag_basis_xyz.o exact_diag_basis_xyz.cpp
+	$(COMPILE.cc) -I../.. -I.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/exact_diag_basis_xyz.o exact_diag_basis_xyz.cpp
 
 ${OBJECTDIR}/parafermion.o: parafermion.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -I../.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/parafermion.o parafermion.cpp
+	$(COMPILE.cc) -I../.. -I.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/parafermion.o parafermion.cpp
 
 ${OBJECTDIR}/parafermion_basis.o: parafermion_basis.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -I../.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/parafermion_basis.o parafermion_basis.cpp
+	$(COMPILE.cc) -I../.. -I.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/parafermion_basis.o parafermion_basis.cpp
 
 ${OBJECTDIR}/parafermion_overlap.o: parafermion_overlap.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -I../.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/parafermion_overlap.o parafermion_overlap.cpp
+	$(COMPILE.cc) -I../.. -I.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/parafermion_overlap.o parafermion_overlap.cpp
 
 # Subprojects
 .build-subprojects:

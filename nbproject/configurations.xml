@@ -88,6 +88,7 @@
           <standard>8</standard>
           <incDir>
             <pElem>../..</pElem>
+            <pElem>..</pElem>
           </incDir>
           <commandLine>-lmpfr -lgmp -march=native -Ofast -pthread</commandLine>
         </ccTool>
