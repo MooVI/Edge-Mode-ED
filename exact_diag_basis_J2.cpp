@@ -5,7 +5,7 @@
  * Created on 13 October 2014, 11:54
  */
 
-#if 1
+#if 0
 
 #include<Eigen/Dense>
 #include<Eigen/unsupported/Eigen/MPRealSupport>
@@ -52,23 +52,24 @@ public:
 
 template <int N>
 inline int sigma_z_j(ulong x, ulong y, ulong j, powersoftwo<N> pows, ulong widthmask) {
-    return -((x^widthmask) == y) * (2 * ((x & pows(j)) >> j) - 1);
+    return -(x == ~y) * (2 * ((y & pows(j)) >> j) - 1);
 }
 
 template <int N>
-inline int sigma_x_j(ulong x, ulong y, ulong j, powersoftwo<N> pows, ulong widthmask) {
-    return (((x | pows(j)) == (y | pows(j))) and (((x^y) & pows(j)) >> j))*(-2 * ((j & x & widthmask) >> widthmask) + 1);
+inline int sigma_x_j(ulong x, ulong y, ulong j, powersoftwo<N> pows, ulong width) {
+    return (((x | pows(j)) == (y | pows(j))) and (((x^y) & pows(j)) >> j))*(-2 * ((pows(j) & x & pows(width-1)) >> (width-1)) + 1);
 }
 
 template <int N>
-inline int sigma_x_j_x_m(ulong x, ulong y, ulong j, ulong m, powersoftwo<N> pows, ulong widthmask) {
+inline int sigma_x_j_x_m(ulong x, ulong y, ulong j, ulong m, powersoftwo<N> pows, ulong width) {
     return (j == m and x == y) ? 1 :
             (((x | pows(j) | pows(m)) == (y | pows(j) | pows(m)))
             and (((x^y) & pows(j)) >> j)
             and (((x^y) & pows(m)) >> m))
-            *(-2 * ((j & x & widthmask) >> widthmask) + 1)
-            *(-2 * ((m & x & widthmask) >> widthmask) + 1);
+            *(-2 * ((pows(j) & x & pows(width-1)) >> (width-1)) + 1)
+            *(-2 * ((pows(m) & x & pows(width-1)) >> (width-1)) + 1);
 }
+
 
 template <int N>
 inline int sigma_z_j_z_m(ulong x, ulong y, ulong j, ulong m, powersoftwo<N> pows) {
@@ -81,7 +82,7 @@ inline int sigma_z_j_z_m(ulong x, ulong y, ulong j, ulong m, powersoftwo<N> pows
 int main() {
     //mpreal::set_default_prec(128);
     ScatterPlotter plotter;
-    const int width = 10;
+    const int width = 6;
 
     powersoftwo < width + 1 > pows2;
 
@@ -110,12 +111,12 @@ int main() {
     
     std::ofstream outfile;
     //outfile.open(std::string("split_basis") + std::to_string(width), std::ios::trunc);
-    std::vector<mpreal> maxoverlap, fs;
+    std::vector<mpreal> maxoverlap, fs, eigdiffs;
     Matrixww HE(pows2(width - 1), pows2(width - 1));
     Matrixww HO(pows2(width - 1), pows2(width - 1));
     
     NumMethod::ForLoopParams<mpreal> fparams;
-    fparams.numPoints = 100; fparams.start = 0.0; fparams.end = 1.01;
+    fparams.numPoints = 1000; fparams.start = 0.0; fparams.end = 1.01;
     auto body = [&](mpreal J2, int i) {
         HE = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
         HO = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
@@ -125,14 +126,14 @@ int main() {
         for (ulong i = 0; i < pows2(width - 1); i++) {
             for (ulong j = 0; j < pows2(width - 1); j++) {
                 for (ulong jsite = 0; jsite < width; jsite++) {
-                    HE(i, j) += -f * sigma_x_j(i, j, jsite, pows2, pows2(width - 1))
+                    HE(i, j) += -f * sigma_x_j(i, j, jsite, pows2, width)
                             - J * sigma_z_j_z_m(i, j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
                             - J2 * sigma_z_j_z_m(i, j, jsite, jsite + 2, pows2)*(((jsite + 2) < width))
-                            - V * sigma_x_j_x_m(i, j, jsite, jsite + 1, pows2, pows2(width - 1))*((jsite + 1) < width);
-                    HO(i, j) += -f * sigma_x_j(~i, ~j, jsite, pows2, pows2(width - 1))
+                            - V * sigma_x_j_x_m(i, j, jsite, jsite + 1, pows2, width)*((jsite + 1) < width);
+                    HO(i, j) += -f * sigma_x_j(~i, ~j, jsite, pows2, width)
                             - J * sigma_z_j_z_m(~i, ~j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
                             - J2 * sigma_z_j_z_m(~i, ~j, jsite, jsite + 2, pows2)*(((jsite + 2) < width))
-                            - V * sigma_x_j_x_m(i, j, jsite, jsite + 1, pows2, pows2(width - 1))*((jsite + 1) < width);
+                            - V * sigma_x_j_x_m(~i, ~j, jsite, jsite + 1, pows2, width)*((jsite + 1) < width);
                 }
             }
         }
@@ -148,7 +149,7 @@ int main() {
         auto evecsE = esE.eigenvectors();
         auto evecsO = esO.eigenvectors();
         //const int ispec = pows2(width - 2);
-        const int ispec = 50;
+        const int ispec = 0;
         auto spec = evecsE.col(ispec).array();
         //outfile << eigs.transpose() << std::endl;
         Arrayw overlap = Vectorw::Zero(pows2(width - 1));
@@ -160,7 +161,9 @@ int main() {
             overlap[i] += (sigz * spec * evecsO.col(i).array()).sum();
         }
         fs.push_back(J2);
-        maxoverlap.push_back(overlap.abs().maxCoeff());
+        int maxind;
+        maxoverlap.push_back(overlap.abs().maxCoeff(&maxind));
+        eigdiffs.push_back(fabs(eigsE[ispec]-eigsO[maxind]));
         //PlotterData pd;
         //pd.style = "l";
         //plotter.plot2(eigsE, overlap, pd);
@@ -175,8 +178,10 @@ int main() {
     
     PlotterData pd;
     pd.style = "l";
-    pd.input = "Ising_J_" + std::to_string(width);
+    pd.input = "Ising_J_ground" + std::to_string(width);
     plotter.plot2(fs, maxoverlap, pd);
+    pd.input += '_eigdiff'; 
+    plotter.plot2(fs, eigdiffs, pd);
     //plotter.plot2withAnalytic(fs, maxoverlap, [](mpreal x){return sqrt(1/(1.0416 + x*x*(1.04 + 3*x*x)));}, 100, pd);
     plotter.wait();
     return 0;

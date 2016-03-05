@@ -109,7 +109,7 @@ int main() {
         Eigen::SelfAdjointEigenSolver<Matrixww> es(H);
         auto eigs = es.eigenvalues();
         auto evecs = es.eigenvectors();
-        const int ispec = 32;
+        const int ispec = pows2(width-2);
         auto spec = evecs.col(ispec).array();
         //outfile << eigs.transpose() << std::endl;
         Arrayw overlap = Vectorw::Zero(pows2(width));
@@ -122,8 +122,9 @@ int main() {
         }
         outfile << overlap << std::endl;
         outfile << eigs << std::endl;
+        PlotterData pd; pd.input = "overlap_clean";
         std::cout << eigs[ispec] << std::endl;
-        plotter.plot2(eigs, overlap);
+        plotter.plot2(eigs, overlap, pd);
         plotter.wait();
     //}
     return 0;

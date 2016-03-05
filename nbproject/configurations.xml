@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configurationDescriptor version="95">
+  <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
+    <logicalFolder name="HeaderFiles"
+                   displayName="Header Files"
+                   projectFiles="true">
+    </logicalFolder>
+    <logicalFolder name="ResourceFiles"
+                   displayName="Resource Files"
+                   projectFiles="true">
+    </logicalFolder>
+    <logicalFolder name="SourceFiles"
+                   displayName="Source Files"
+                   projectFiles="true">
+      <itemPath>exact_diag.cpp</itemPath>
+      <itemPath>exact_diag_basis.cpp</itemPath>
+      <itemPath>exact_diag_basis_J2.cpp</itemPath>
+      <itemPath>exact_diag_basis_f.cpp</itemPath>
+      <itemPath>exact_diag_basis_xyz.cpp</itemPath>
+      <itemPath>parafermion.cpp</itemPath>
+      <itemPath>parafermion_basis.cpp</itemPath>
+      <itemPath>parafermion_overlap.cpp</itemPath>
+    </logicalFolder>
+    <logicalFolder name="TestFiles"
+                   displayName="Test Files"
+                   projectFiles="false"
+                   kind="TEST_LOGICAL_FOLDER">
+    </logicalFolder>
+    <logicalFolder name="ExternalFiles"
+                   displayName="Important Files"
+                   projectFiles="false"
+                   kind="IMPORTANT_FILES_FOLDER">
+    </logicalFolder>
+  </logicalFolder>
+  <projectmakefile>Makefile</projectmakefile>
+  <confs>
+    <conf name="Debug" type="1">
+      <toolsSet>
+        <compilerSet>default</compilerSet>
+        <dependencyChecking>true</dependencyChecking>
+        <rebuildPropChanged>false</rebuildPropChanged>
+      </toolsSet>
+      <compileType>
+        <ccTool>
+          <standard>8</standard>
+          <incDir>
+            <pElem>../..</pElem>
+          </incDir>
+          <commandLine>-lgmp -lmpfr -msse4</commandLine>
+        </ccTool>
+        <linkerTool>
+          <linkerLibItems>
+            <linkerLibFileItem>../../Plotting/Plotter/dist/Release/GNU-Linux-x86/libplotter.a</linkerLibFileItem>
+            <linkerLibFileItem>../../NumericalMethods/NumericalMethods/dist/Release/GNU-Linux-x86/libnumericalmethods.a</linkerLibFileItem>
+          </linkerLibItems>
+        </linkerTool>
+      </compileType>
+      <item path="exact_diag.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="exact_diag_basis.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="exact_diag_basis_J2.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="exact_diag_basis_f.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="exact_diag_basis_xyz.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="parafermion.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="parafermion_basis.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="parafermion_overlap.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+    </conf>
+    <conf name="Release" type="1">
+      <toolsSet>
+        <compilerSet>default</compilerSet>
+        <dependencyChecking>true</dependencyChecking>
+        <rebuildPropChanged>false</rebuildPropChanged>
+      </toolsSet>
+      <compileType>
+        <cTool>
+          <developmentMode>5</developmentMode>
+        </cTool>
+        <ccTool>
+          <developmentMode>0</developmentMode>
+          <architecture>2</architecture>
+          <standard>8</standard>
+          <incDir>
+            <pElem>../..</pElem>
+          </incDir>
+          <commandLine>-lmpfr -lgmp -march=native -Ofast -std=c++14 -pthread</commandLine>
+        </ccTool>
+        <fortranCompilerTool>
+          <developmentMode>5</developmentMode>
+        </fortranCompilerTool>
+        <asmTool>
+          <developmentMode>5</developmentMode>
+        </asmTool>
+        <linkerTool>
+          <linkerLibItems>
+            <linkerLibFileItem>../../Plotting/Plotter/dist/Release/GNU-Linux-x86/libplotter.a</linkerLibFileItem>
+            <linkerLibFileItem>../../NumericalMethods/NumericalMethods/dist/Release/GNU-Linux-x86/libnumericalmethods.a</linkerLibFileItem>
+          </linkerLibItems>
+        </linkerTool>
+      </compileType>
+      <item path="exact_diag.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="exact_diag_basis.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="exact_diag_basis_J2.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="exact_diag_basis_f.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="exact_diag_basis_xyz.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="parafermion.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="parafermion_basis.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="parafermion_overlap.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+    </conf>
+  </confs>
+</configurationDescriptor>
