@@ -35,14 +35,23 @@ OBJECTDIR=${CND_BUILDDIR}/${CND_CONF}/${CND_PLATFORM}
 
 # Object Files
 OBJECTFILES= \
+	${OBJECTDIR}/XYZ_mean.o \
+	${OBJECTDIR}/XYZ_stagger.o \
+	${OBJECTDIR}/decay_XYZ.o \
+	${OBJECTDIR}/decay_ising.o \
 	${OBJECTDIR}/exact_diag.o \
 	${OBJECTDIR}/exact_diag_basis.o \
 	${OBJECTDIR}/exact_diag_basis_J2.o \
 	${OBJECTDIR}/exact_diag_basis_f.o \
 	${OBJECTDIR}/exact_diag_basis_xyz.o \
+	${OBJECTDIR}/exact_diag_mean.o \
+	${OBJECTDIR}/length_XYZ.o \
+	${OBJECTDIR}/length_ising.o \
 	${OBJECTDIR}/parafermion.o \
 	${OBJECTDIR}/parafermion_basis.o \
-	${OBJECTDIR}/parafermion_overlap.o
+	${OBJECTDIR}/parafermion_mean.o \
+	${OBJECTDIR}/parafermion_overlap.o \
+	${OBJECTDIR}/timedecay_ising.o
 
 
 # C Compiler Flags
@@ -73,6 +82,26 @@ ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/tp11_1: ${OBJECTFILES}
 	${MKDIR} -p ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}
 	${LINK.cc} -o ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/tp11_1 ${OBJECTFILES} ${LDLIBSOPTIONS}
 
+${OBJECTDIR}/XYZ_mean.o: XYZ_mean.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} "$@.d"
+	$(COMPILE.cc) -g -I../.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/XYZ_mean.o XYZ_mean.cpp
+
+${OBJECTDIR}/XYZ_stagger.o: XYZ_stagger.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} "$@.d"
+	$(COMPILE.cc) -g -I../.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/XYZ_stagger.o XYZ_stagger.cpp
+
+${OBJECTDIR}/decay_XYZ.o: decay_XYZ.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} "$@.d"
+	$(COMPILE.cc) -g -I../.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/decay_XYZ.o decay_XYZ.cpp
+
+${OBJECTDIR}/decay_ising.o: decay_ising.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} "$@.d"
+	$(COMPILE.cc) -g -I../.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/decay_ising.o decay_ising.cpp
+
 ${OBJECTDIR}/exact_diag.o: exact_diag.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
@@ -98,6 +127,21 @@ ${OBJECTDIR}/exact_diag_basis_xyz.o: exact_diag_basis_xyz.cpp
 	${RM} "$@.d"
 	$(COMPILE.cc) -g -I../.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/exact_diag_basis_xyz.o exact_diag_basis_xyz.cpp
 
+${OBJECTDIR}/exact_diag_mean.o: exact_diag_mean.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} "$@.d"
+	$(COMPILE.cc) -g -I../.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/exact_diag_mean.o exact_diag_mean.cpp
+
+${OBJECTDIR}/length_XYZ.o: length_XYZ.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} "$@.d"
+	$(COMPILE.cc) -g -I../.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/length_XYZ.o length_XYZ.cpp
+
+${OBJECTDIR}/length_ising.o: length_ising.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} "$@.d"
+	$(COMPILE.cc) -g -I../.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/length_ising.o length_ising.cpp
+
 ${OBJECTDIR}/parafermion.o: parafermion.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
@@ -108,10 +152,20 @@ ${OBJECTDIR}/parafermion_basis.o: parafermion_basis.cpp
 	${RM} "$@.d"
 	$(COMPILE.cc) -g -I../.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/parafermion_basis.o parafermion_basis.cpp
 
+${OBJECTDIR}/parafermion_mean.o: parafermion_mean.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} "$@.d"
+	$(COMPILE.cc) -g -I../.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/parafermion_mean.o parafermion_mean.cpp
+
 ${OBJECTDIR}/parafermion_overlap.o: parafermion_overlap.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
 	$(COMPILE.cc) -g -I../.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/parafermion_overlap.o parafermion_overlap.cpp
+
+${OBJECTDIR}/timedecay_ising.o: timedecay_ising.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} "$@.d"
+	$(COMPILE.cc) -g -I../.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/timedecay_ising.o timedecay_ising.cpp
 
 # Subprojects
 .build-subprojects:

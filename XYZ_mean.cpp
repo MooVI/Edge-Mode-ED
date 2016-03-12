@@ -26,7 +26,7 @@ using NumMethod::posmod;
 typedef double mpreal;
 typedef unsigned long ulong;
 
-constexpr ulong width = 10;
+constexpr ulong width = 8;
 constexpr ulong ignoremask = ~((1 << (width -1))-1);
 
 template <int N>
@@ -118,7 +118,9 @@ int main() {
     const double Y = 0.1;
     const double Z = 1.0;
     //const double f = r * J;
-    const double X = 0.8;
+    const double X = 0.2;
+    const double stag = 0.0;
+    NumMethod::RunningStats<mpreal> statoverlap, stateigdiff;
     
     /*Matrixww test (pows2(width-1), pows2(width-1));
     
@@ -157,14 +159,16 @@ int main() {
         for (ulong i = 0; i < pows2(width - 1); i++) {
             for (ulong j = 0; j < pows2(width - 1); j++) {
                 for (ulong jsite = 0; jsite < width; jsite++) {
+                    int sym = 2*(jsite%2) - 1;
+                    //std::cout << sym*stag;
                     HE(i, j) += 
                             - Z * sigma_z_j_z_m(i, j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
-                            - Y * sigma_y_j_y_m(i, j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
-                            - X * sigma_x_j_x_m(i, j, jsite, jsite + 1, pows2)*((jsite + 1) < width);
+                            - (Y+sym*stag)* sigma_y_j_y_m(i, j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
+                            - (X+sym*stag) * sigma_x_j_x_m(i, j, jsite, jsite + 1, pows2)*((jsite + 1) < width);
                     HO(i, j) += 
                             - Z * sigma_z_j_z_m(~i, ~j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
-                            - Y * sigma_y_j_y_m(~i, ~j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
-                            - X * sigma_x_j_x_m(~i, ~j, jsite, jsite + 1, pows2)*((jsite + 1) < width);
+                            - (Y+sym*stag) * sigma_y_j_y_m(~i, ~j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
+                            - (X+sym*stag) * sigma_x_j_x_m(~i, ~j, jsite, jsite + 1, pows2)*((jsite + 1) < width);
                 }
             }
         }
@@ -179,8 +183,8 @@ int main() {
         auto eigsO = esO.eigenvalues();
         auto evecsE = esE.eigenvectors();
         auto evecsO = esO.eigenvectors();
-        //const int ispec = pows2(width - 2);
-        const int ispec = 0;
+        for (int ispec =0; ispec< pows2(width - 1); ispec++){
+        //const int ispec = 0;
         auto spec = evecsE.col(ispec).array();
         //outfile << eigs.transpose() << std::endl;
         Arrayw overlap = Vectorw::Zero(pows2(width - 1));
@@ -191,11 +195,16 @@ int main() {
             //overlap[i] = accumulator.sum();
             overlap[i] += (spec*sigz*evecsO.col(i).array()).sum();     
         }
-        fs.push_back(Y);
-        int maxind;
-        maxoverlap.push_back(overlap.abs().maxCoeff(&maxind));
-        eigdiffs.push_back(fabs(eigsE[ispec]-eigsO[maxind]));
         
+        int maxind;
+        statoverlap.Push(overlap.abs().maxCoeff(&maxind));
+        stateigdiff.Push(fabs(eigsE[ispec]-eigsO[maxind]));
+        }
+        fs.push_back(Y);
+        maxoverlap.push_back(statoverlap.Mean());
+        eigdiffs.push_back(stateigdiff.Mean());
+        statoverlap.Clear();
+        stateigdiff.Clear();
         //PlotterData pd;
         //pd.style = "l";
         //plotter.plot2(eigsE, overlap, pd);
@@ -210,16 +219,17 @@ int main() {
     
     PlotterData pd, pd2;
     pd.style = "l";
-    pd.input = "Ising_XYZ_ground_0.8_" + std::to_string(width);
+    pd.input = "Ising_XYZstaganaly_" + std::to_string(width);
     //plotter.plot2(fs, maxoverlap, pd);
     pd2.input = pd.input + std::string("_eigdiff"); 
     plotter.plot2(fs, eigdiffs, pd2);
-    plotter.plot2withAnalytic(fs, maxoverlap, [=](mpreal x){return sqrt(1-x*x)*sqrt(1-X*X)/(1-x*X);}, 100, pd);
+    plotter.plot2withAnalytic(fs, maxoverlap, [=](mpreal x){return sqrt(1-x*x)*sqrt(1-x*x);}, 100, pd);
     plotter.wait();
     return 0;
 
 }
 #endif 
+
 
 
 

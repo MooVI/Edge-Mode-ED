@@ -26,7 +26,7 @@ using NumMethod::posmod;
 typedef double mpreal;
 typedef unsigned long ulong;
 
-constexpr ulong width = 10;
+constexpr ulong width = 12;
 constexpr ulong ignoremask = ~((1 << (width -1))-1);
 
 template <int N>
@@ -118,7 +118,9 @@ int main() {
     const double Y = 0.1;
     const double Z = 1.0;
     //const double f = r * J;
-    const double X = 0.8;
+    const double X = 0.2;
+    const double stag = 0.0;
+    NumMethod::RunningStats<mpreal> statoverlap, stateigdiff;
     
     /*Matrixww test (pows2(width-1), pows2(width-1));
     
@@ -135,7 +137,7 @@ int main() {
     
     std::ofstream outfile;
     //outfile.open(std::string("split_basis") + std::to_string(width), std::ios::trunc);
-    std::vector<mpreal> maxoverlap, fs, eigdiffs;
+    
     Matrixww HE(pows2(width - 1), pows2(width - 1));
     Matrixww HO(pows2(width - 1), pows2(width - 1));
     
@@ -147,7 +149,12 @@ int main() {
         }
     
     NumMethod::ForLoopParams<mpreal> fparams;
-    fparams.numPoints = 100; fparams.start = 0.0; fparams.end = 1.01;
+    fparams.numPoints = 2;
+    fparams.start = 0.1;
+    fparams.end = 0.95;
+    std::vector<std::vector<mpreal>> maxoverlap (fparams.numPoints), eigdiffs (fparams.numPoints), times(fparams.numPoints);
+    Arrayw moverlaps (pows2(width - 1)), meigdiff(pows2(width - 1));
+    std::vector<mpreal> fs;
     auto body = [&](mpreal Y, int i) {
         HE = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
         HO = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
@@ -157,14 +164,16 @@ int main() {
         for (ulong i = 0; i < pows2(width - 1); i++) {
             for (ulong j = 0; j < pows2(width - 1); j++) {
                 for (ulong jsite = 0; jsite < width; jsite++) {
+                    int sym = 2*(jsite%2) - 1;
+                    //std::cout << sym*stag;
                     HE(i, j) += 
                             - Z * sigma_z_j_z_m(i, j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
-                            - Y * sigma_y_j_y_m(i, j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
-                            - X * sigma_x_j_x_m(i, j, jsite, jsite + 1, pows2)*((jsite + 1) < width);
+                            - (Y+sym*stag)* sigma_y_j_y_m(i, j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
+                            - (X+sym*stag) * sigma_x_j_x_m(i, j, jsite, jsite + 1, pows2)*((jsite + 1) < width);
                     HO(i, j) += 
                             - Z * sigma_z_j_z_m(~i, ~j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
-                            - Y * sigma_y_j_y_m(~i, ~j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
-                            - X * sigma_x_j_x_m(~i, ~j, jsite, jsite + 1, pows2)*((jsite + 1) < width);
+                            - (Y+sym*stag) * sigma_y_j_y_m(~i, ~j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
+                            - (X+sym*stag) * sigma_x_j_x_m(~i, ~j, jsite, jsite + 1, pows2)*((jsite + 1) < width);
                 }
             }
         }
@@ -179,8 +188,8 @@ int main() {
         auto eigsO = esO.eigenvalues();
         auto evecsE = esE.eigenvectors();
         auto evecsO = esO.eigenvectors();
-        //const int ispec = pows2(width - 2);
-        const int ispec = 0;
+        for (int ispec =0; ispec< pows2(width - 1); ispec++){
+        //const int ispec = 0;
         auto spec = evecsE.col(ispec).array();
         //outfile << eigs.transpose() << std::endl;
         Arrayw overlap = Vectorw::Zero(pows2(width - 1));
@@ -191,11 +200,27 @@ int main() {
             //overlap[i] = accumulator.sum();
             overlap[i] += (spec*sigz*evecsO.col(i).array()).sum();     
         }
-        fs.push_back(Y);
-        int maxind;
-        maxoverlap.push_back(overlap.abs().maxCoeff(&maxind));
-        eigdiffs.push_back(fabs(eigsE[ispec]-eigsO[maxind]));
         
+        int maxind;
+                moverlaps[ispec] = overlap.square().maxCoeff(&maxind);
+                meigdiff[ispec] = eigsE[ispec] - eigsO[maxind];
+                //stateigdiff.Push();
+        }
+        NumMethod::EqualSpaceFor logfor;
+        NumMethod::ForLoopParams<mpreal> logparams;
+        logparams.start = 0; logparams.end = 100; logparams.numPoints = 1000;
+        //for (mpreal t = 0; t < 10000; t += 100) {
+        auto tfunc = [&](mpreal t, int j){
+           maxoverlap[i].push_back((moverlaps*meigdiff.unaryExpr([=](mpreal x) {return cos(x*t);})).mean());
+           times[i].push_back(t); 
+           return false;
+        };
+        logfor.loop(tfunc,logparams);
+        plotter.writeToFile("eigdiff_dist_Y_"+std::to_string(Y), meigdiff);
+            //eigdiffs[i].push_back(stateigdiff.Mean());
+        statoverlap.Clear();
+            //stateigdiff.Clear();
+        fs.push_back(Y);
         //PlotterData pd;
         //pd.style = "l";
         //plotter.plot2(eigsE, overlap, pd);
@@ -210,16 +235,19 @@ int main() {
     
     PlotterData pd, pd2;
     pd.style = "l";
-    pd.input = "Ising_XYZ_ground_0.8_" + std::to_string(width);
-    //plotter.plot2(fs, maxoverlap, pd);
-    pd2.input = pd.input + std::string("_eigdiff"); 
-    plotter.plot2(fs, eigdiffs, pd2);
-    plotter.plot2withAnalytic(fs, maxoverlap, [=](mpreal x){return sqrt(1-x*x)*sqrt(1-X*X)/(1-x*X);}, 100, pd);
+    pd.input = "XYZ_X_0.2_Y_" + std::to_string(fs[0])+ "_decay_" + std::to_string(width);
+    plotter.plot2(times[0], maxoverlap[0], pd);
+    //plotter.plot2withAnalytic(times[0], maxoverlap[0], [](mpreal x){return exp(-x*x*1.4e-15);}, 100, pd);
+    pd2.input = "XYZ_X_0.2_Y" + std::to_string(fs[1])+ "_decay_" + std::to_string(width);
+    plotter.plot2(times[1], maxoverlap[1], pd2);
+    //plotter.plot2withAnalytic(times[1], maxoverlap[1], [](mpreal x){return (0.538-0.36)*exp(-x*x*2.8e-6)+0.36;}, 1000, pd2);
     plotter.wait();
     return 0;
 
 }
 #endif 
+
+
 
 
 

@@ -26,8 +26,7 @@ using NumMethod::posmod;
 typedef double mpreal;
 typedef unsigned long ulong;
 
-constexpr ulong width = 10;
-constexpr ulong ignoremask = ~((1 << (width -1))-1);
+
 
 template <int N>
 class powersoftwo {
@@ -58,8 +57,10 @@ inline int sigma_z_j(ulong x, ulong y, ulong j, powersoftwo<N> pows, ulong width
     return -(x == ~y) * (2 * ((y & pows(j)) >> j) - 1);
 }
 
+
+
 template <int N>
-inline int sigma_x_j(ulong x, ulong y, ulong j, powersoftwo<N> pows) {
+inline int sigma_x_j(ulong x, ulong y, ulong j, powersoftwo<N> pows, const int width, const int ignoremask) {
     return ( 
             (x == (y^pows(j)))
                ^( (j == width-1) and (
@@ -70,7 +71,7 @@ inline int sigma_x_j(ulong x, ulong y, ulong j, powersoftwo<N> pows) {
 }
 
 template <int N>
-inline int sigma_x_j_x_m(ulong x, ulong y, ulong j, ulong m, powersoftwo<N> pows) {
+inline int sigma_x_j_x_m(ulong x, ulong y, ulong j, ulong m, powersoftwo<N> pows,  const int width, const int ignoremask) {
     return j == m ? (x==y ? 1 : 0)  :
             ( 
             (x == (y^pows(j)^pows(m)))
@@ -82,19 +83,6 @@ inline int sigma_x_j_x_m(ulong x, ulong y, ulong j, ulong m, powersoftwo<N> pows
              *(-2 * ((pows(m) & y & pows(width-1)) >> (width-1)) + 1);
 }
 
-template <int N>
-inline int sigma_y_j_y_m(ulong x, ulong y, ulong j, ulong m, powersoftwo<N> pows) {
-    return j == m ? (x==y ? 1 : 0)  :
-            ( 
-            (x == (y^pows(j)^pows(m)))
-            or
-            ( (j == width-1) and ((x | ignoremask) == ((~(y^pows(m))) | ignoremask)))
-            or
-            ( (m == width-1) and ((x | ignoremask) == ((~(y^pows(j))) | ignoremask)))
-            )*(-2 * ((pows(j) & y & pows(width-1)) >> (width-1)) + 1)
-             *(-2 * ((pows(m) & y & pows(width-1)) >> (width-1)) + 1)
-             *(2*(((y & pows(j)) >> j) ^ ((y & pows(m)) >> m))-1);
-}
 
 template <int N>
 inline int sigma_z_j_z_m(ulong x, ulong y, ulong j, ulong m, powersoftwo<N> pows) {
@@ -107,35 +95,30 @@ inline int sigma_z_j_z_m(ulong x, ulong y, ulong j, ulong m, powersoftwo<N> pows
 int main() {
     //mpreal::set_default_prec(128);
     ScatterPlotter plotter;
-
-    powersoftwo < width + 1 > pows2;
+    
+    constexpr int maxwidth = 12;
+    powersoftwo < maxwidth + 1 > pows2;
 
     typedef Eigen::Matrix<mpreal, Eigen::Dynamic, Eigen::Dynamic> Matrixww;
     typedef Eigen::Matrix<mpreal, Eigen::Dynamic, 1> Vectorw;
     typedef Eigen::Array<mpreal, Eigen::Dynamic, 1> Arrayw;
 
     const double r = 0.05;
-    const double Y = 0.1;
-    const double Z = 1.0;
-    //const double f = r * J;
-    const double X = 0.8;
+    const double J2 = 0.95;
+    const double J = 1.0;
+    const double f = 0.05;
+    const double V = 0.0;
     
-    /*Matrixww test (pows2(width-1), pows2(width-1));
+   NumMethod::RunningStats<mpreal> statoverlap, stateigdiff;
     
-    for (ulong i = 0; i < pows2(width-1); i++) {
-            
-                for (ulong jsite = 0; jsite < width; jsite++){
-                    test (i, i) += sigma_z_j_z_m(i, i, jsite, jsite + 2, pows2)*(((jsite + 2) < width));
-                }
-            }
-    for (ulong i = 0; i < pows2(width-1); i++) {
-        std::cout<< test(i,i)<< ' ';
-    }
-     */
+   
+   const int begin = 4;
+   const int end = 13; 
+   
+   std::vector<mpreal> maxoverlap, evars, eigdiffs;
+    auto body = [&](int width, int i) {
+    int ignoremask = ~((1 << (width -1))-1);
     
-    std::ofstream outfile;
-    //outfile.open(std::string("split_basis") + std::to_string(width), std::ios::trunc);
-    std::vector<mpreal> maxoverlap, fs, eigdiffs;
     Matrixww HE(pows2(width - 1), pows2(width - 1));
     Matrixww HO(pows2(width - 1), pows2(width - 1));
     
@@ -146,9 +129,7 @@ int main() {
             sigz2[i] = i % 4 < 2 ? 1: -1;
         }
     
-    NumMethod::ForLoopParams<mpreal> fparams;
-    fparams.numPoints = 100; fparams.start = 0.0; fparams.end = 1.01;
-    auto body = [&](mpreal Y, int i) {
+    
         HE = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
         HO = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
 
@@ -157,14 +138,14 @@ int main() {
         for (ulong i = 0; i < pows2(width - 1); i++) {
             for (ulong j = 0; j < pows2(width - 1); j++) {
                 for (ulong jsite = 0; jsite < width; jsite++) {
-                    HE(i, j) += 
-                            - Z * sigma_z_j_z_m(i, j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
-                            - Y * sigma_y_j_y_m(i, j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
-                            - X * sigma_x_j_x_m(i, j, jsite, jsite + 1, pows2)*((jsite + 1) < width);
-                    HO(i, j) += 
-                            - Z * sigma_z_j_z_m(~i, ~j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
-                            - Y * sigma_y_j_y_m(~i, ~j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
-                            - X * sigma_x_j_x_m(~i, ~j, jsite, jsite + 1, pows2)*((jsite + 1) < width);
+                    HE(i, j) += -f * sigma_x_j(i, j, jsite, pows2, width, ignoremask)
+                            - J * sigma_z_j_z_m(i, j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
+                            - J2 * sigma_z_j_z_m(i, j, jsite, jsite + 2, pows2)*(((jsite + 2) < width))
+                            - V * sigma_x_j_x_m(i, j, jsite, jsite + 1, pows2, width, ignoremask)*((jsite + 1) < width);
+                    HO(i, j) += -f * sigma_x_j(~i, ~j, jsite, pows2, width, ignoremask)
+                            - J * sigma_z_j_z_m(~i, ~j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
+                            - J2 * sigma_z_j_z_m(~i, ~j, jsite, jsite + 2, pows2)*(((jsite + 2) < width))
+                            - V * sigma_x_j_x_m(~i, ~j, jsite, jsite + 1, pows2, width, ignoremask)*((jsite + 1) < width);
                 }
             }
         }
@@ -179,8 +160,8 @@ int main() {
         auto eigsO = esO.eigenvalues();
         auto evecsE = esE.eigenvectors();
         auto evecsO = esO.eigenvectors();
-        //const int ispec = pows2(width - 2);
-        const int ispec = 0;
+        for (int ispec =0; ispec< pows2(width - 1); ispec++){
+        //const int ispec = 0;
         auto spec = evecsE.col(ispec).array();
         //outfile << eigs.transpose() << std::endl;
         Arrayw overlap = Vectorw::Zero(pows2(width - 1));
@@ -191,11 +172,16 @@ int main() {
             //overlap[i] = accumulator.sum();
             overlap[i] += (spec*sigz*evecsO.col(i).array()).sum();     
         }
-        fs.push_back(Y);
-        int maxind;
-        maxoverlap.push_back(overlap.abs().maxCoeff(&maxind));
-        eigdiffs.push_back(fabs(eigsE[ispec]-eigsO[maxind]));
         
+        int maxind;
+        statoverlap.Push(overlap.abs().maxCoeff(&maxind));
+        stateigdiff.Push(fabs(eigsE[ispec]-eigsO[maxind]));
+        }
+        maxoverlap.push_back(statoverlap.Mean());
+        eigdiffs.push_back(stateigdiff.Mean());
+        evars.push_back(stateigdiff.Variance());
+        statoverlap.Clear();
+        stateigdiff.Clear();
         //PlotterData pd;
         //pd.style = "l";
         //plotter.plot2(eigsE, overlap, pd);
@@ -203,23 +189,27 @@ int main() {
         return false;
     };
     
-    NumMethod::EqualSpaceFor forloop; 
-    forloop.loop(body, fparams);
+    NumMethod::Range forloop; 
+    forloop.loop(body, begin, end);
+    std::vector<int> widths = forloop.get_x(begin, end);
+    
     //plotter.writeToFile("split_basis", eigsE, eigsO);
     //std::cout << eigsE[ispec] << ' ' << eigsO[ispec] << std::endl;
     
     PlotterData pd, pd2;
     pd.style = "l";
-    pd.input = "Ising_XYZ_ground_0.8_" + std::to_string(width);
-    //plotter.plot2(fs, maxoverlap, pd);
+    pd.input = "Ising_widths_f_0.05_J_0.95";
+    plotter.plot2(widths, maxoverlap, pd);
     pd2.input = pd.input + std::string("_eigdiff"); 
-    plotter.plot2(fs, eigdiffs, pd2);
-    plotter.plot2withAnalytic(fs, maxoverlap, [=](mpreal x){return sqrt(1-x*x)*sqrt(1-X*X)/(1-x*X);}, 100, pd);
+    plotter.plot2(widths, eigdiffs, pd2);
+    plotter.plot2(widths, evars, pd.input+std::string("_evar"));
+    //plotter.plot2withAnalytic(fs, maxoverlap, [](mpreal x){return sqrt(1-x*x);}, 100, pd);
     plotter.wait();
     return 0;
 
 }
 #endif 
+
 
 
 

@@ -26,7 +26,7 @@ using NumMethod::posmod;
 typedef double mpreal;
 typedef unsigned long ulong;
 
-constexpr ulong width = 10;
+constexpr ulong width = 9;
 constexpr ulong ignoremask = ~((1 << (width -1))-1);
 
 template <int N>
@@ -115,11 +115,11 @@ int main() {
     typedef Eigen::Array<mpreal, Eigen::Dynamic, 1> Arrayw;
 
     const double r = 0.05;
-    const double Y = 0.1;
+    const double Y = 0.2;
     const double Z = 1.0;
     //const double f = r * J;
-    const double X = 0.8;
-    
+    const double X = 0.2;
+    const double stag = 0.000;
     /*Matrixww test (pows2(width-1), pows2(width-1));
     
     for (ulong i = 0; i < pows2(width-1); i++) {
@@ -157,14 +157,16 @@ int main() {
         for (ulong i = 0; i < pows2(width - 1); i++) {
             for (ulong j = 0; j < pows2(width - 1); j++) {
                 for (ulong jsite = 0; jsite < width; jsite++) {
+                    int sym = 2*(jsite%2) - 1;
+                    //std::cout << sym*stag;
                     HE(i, j) += 
                             - Z * sigma_z_j_z_m(i, j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
-                            - Y * sigma_y_j_y_m(i, j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
-                            - X * sigma_x_j_x_m(i, j, jsite, jsite + 1, pows2)*((jsite + 1) < width);
+                            - (Y+sym*stag)* sigma_y_j_y_m(i, j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
+                            - (-Y+sym*stag) * sigma_x_j_x_m(i, j, jsite, jsite + 1, pows2)*((jsite + 1) < width);
                     HO(i, j) += 
                             - Z * sigma_z_j_z_m(~i, ~j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
-                            - Y * sigma_y_j_y_m(~i, ~j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
-                            - X * sigma_x_j_x_m(~i, ~j, jsite, jsite + 1, pows2)*((jsite + 1) < width);
+                            - (Y+sym*stag) * sigma_y_j_y_m(~i, ~j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
+                            - (-Y+sym*stag) * sigma_x_j_x_m(~i, ~j, jsite, jsite + 1, pows2)*((jsite + 1) < width);
                 }
             }
         }
@@ -210,11 +212,12 @@ int main() {
     
     PlotterData pd, pd2;
     pd.style = "l";
-    pd.input = "Ising_XYZ_ground_0.8_" + std::to_string(width);
+    pd.input = "Ising_XmXZ_" + std::to_string(stag)+"_" +std::to_string(width);
     //plotter.plot2(fs, maxoverlap, pd);
     pd2.input = pd.input + std::string("_eigdiff"); 
     plotter.plot2(fs, eigdiffs, pd2);
-    plotter.plot2withAnalytic(fs, maxoverlap, [=](mpreal x){return sqrt(1-x*x)*sqrt(1-X*X)/(1-x*X);}, 100, pd);
+    //plotter.plot2withAnalytic(fs, maxoverlap, [=](mpreal x){return sqrt(1-x*x)*sqrt(1-X*X)/(1-x*X);}, 100, pd);
+    plotter.plot2withAnalytic(fs, maxoverlap, [=](mpreal x){return sqrt(1-x*x)/(1+x);}, 100, pd);
     plotter.wait();
     return 0;
 

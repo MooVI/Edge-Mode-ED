@@ -5,7 +5,7 @@
  * Created on 13 October 2014, 11:54
  */
 
-#if 0
+#if 1
 
 #include<Eigen/Dense>
 //#include<Eigen/unsupported/Eigen/MPRealSupport>
@@ -210,14 +210,16 @@ int main() {
     //Eigen::initParallel();
     
 
-    const double phi = pi/2;
-    const double theta = pi/2;
+    const double phi = pi/6;
+    const double theta = pi/3;
     complex ephi = std::polar(1., phi);
     complex mephi = std::polar(1., -phi);
     complex eth = std::polar(1., theta);
     complex meth = std::polar(1., -theta);
     const double J = 1.0;
     const double f = 0.01;
+    
+    NumMethod::RunningStats<mpreal> statoverlapA, stateigdiffA, statoverlapB, stateigdiffB ;
     
     std::vector<mpreal> maxoverlapA, fs, eigdiffsA, maxoverlapB, eigdiffsB;
     
@@ -252,7 +254,7 @@ int main() {
     Matrixww HB(n3states, n3states);
     Matrixww HC(n3states, n3states);
     NumMethod::ForLoopParams<mpreal> fparams;
-    fparams.numPoints = 50; fparams.start = 0; fparams.end = pi/3+0.1;
+    fparams.numPoints = 100; fparams.start = 0; fparams.end = 1.1;
     auto body = [&](mpreal f, int i) {
         HA = Matrixww::Zero(n3states, n3states);
         HB = Matrixww::Zero(n3states, n3states);
@@ -270,10 +272,10 @@ int main() {
                     HB(i, j) += -f *(ephi*sigma_x_j(istateB, jstateB, jsite) + mephi*sigma_x_j_conj(istateB, jstateB, jsite))
                             - J *(meth*sigma_z_j_conj_z_m(istateB, jstateB, jsite, jsite + 1)
                                  +eth*sigma_z_j_conj_z_m(istateB, jstateB, jsite+1, jsite))*((mpreal) ((jsite + 1) < width));
-                    Spin3State istateC = istate.bcycle_all(), jstateC = jstate.bcycle_all();  
-                    HC(i, j) += -f *(ephi*sigma_x_j(istateC, jstateC, jsite) + mephi*sigma_x_j_conj(istateC, jstateC, jsite))
-                            - J *(meth*sigma_z_j_conj_z_m(istateC, jstateC, jsite, jsite + 1)
-                                 +eth*sigma_z_j_conj_z_m(istateC, jstateC, jsite+1, jsite))*((mpreal) ((jsite + 1) < width));
+                    //Spin3State istateC = istate.bcycle_all(), jstateC = jstate.bcycle_all();  
+                    //HC(i, j) += -f *(ephi*sigma_x_j(istateC, jstateC, jsite) + mephi*sigma_x_j_conj(istateC, jstateC, jsite))
+                    //        - J *(meth*sigma_z_j_conj_z_m(istateC, jstateC, jsite, jsite + 1)
+                    //             +eth*sigma_z_j_conj_z_m(istateC, jstateC, jsite+1, jsite))*((mpreal) ((jsite + 1) < width));
                 }
                 jstate = jstate.increment();
                 //std::cout << jstate.get_state();
@@ -284,32 +286,39 @@ int main() {
         
         Eigen::SelfAdjointEigenSolver<Matrixww> esA(HA.rows());
         std::thread t1(solve_eigensystem<Matrixww>,std::ref(esA), std::ref(HA));
-        Eigen::SelfAdjointEigenSolver<Matrixww> esB(HB.rows());
-        std::thread t2(solve_eigensystem<Matrixww>,std::ref(esB), std::ref(HB));
-        Eigen::SelfAdjointEigenSolver<Matrixww> esC(HC);
+        //Eigen::SelfAdjointEigenSolver<Matrixww> esB(HB.rows());
+        //std::thread t2(solve_eigensystem<Matrixww>,std::ref(esB), std::ref(HB));
+        Eigen::SelfAdjointEigenSolver<Matrixww> esB(HB);
         t1.join();
-        t2.join();
+        //t2.join();
         Arrayw overlapA = Arrayw::Zero(n3states), overlapB = Arrayw::Zero(n3states);
         auto evecsA = esA.eigenvectors();
         auto evecsB = esB.eigenvectors();
-        auto evecsC = esC.eigenvectors();
+        //auto evecsC = esC.eigenvectors();
         auto eigsA = esA.eigenvalues();
         auto eigsB = esB.eigenvalues();
-        auto eigsC = esC.eigenvalues();
-        const int ispec = n3states/3;
+        //auto eigsC = esC.eigenvalues();
+        for (int ispec =0; ispec< n3states; ispec++){
+        //const int ispec = n3states/3;
         //const int ispec = 0;
         auto specA = evecsA.col(ispec).array();
-        auto specB = evecsB.col(ispec).array();
+        //auto specB = evecsB.col(ispec).array();
         for (int i = 0; i < sigz.size(); i++) {
             overlapA[i] =fabs((specA*sigz*evecsB.col(i).array()).sum());
-            overlapB[i] =fabs((specB*sigz*evecsC.col(i).array()).sum()); 
+            //overlapB[i] =fabs((specB*sigz*evecsC.col(i).array()).sum()); 
+        }
+        
+        int maxindA, maxindB;
+        statoverlapA.Push(overlapA.abs().maxCoeff(&maxindA));
+        stateigdiffA.Push(fabs(eigsA[ispec]-eigsB[maxindA]));
+        //statoverlapB.Push(overlapB.abs().maxCoeff(&maxindB));
+        //stateigdiffB.Push(fabs(eigsB[ispec]-eigsC[maxindB]));
         }
         fs.push_back(f);
-        int maxindA, maxindB;
-        maxoverlapA.push_back(overlapA.abs().maxCoeff(&maxindA));
-        eigdiffsA.push_back(fabs(eigsA[ispec]-eigsB[maxindA]));
-        maxoverlapB.push_back(overlapB.abs().maxCoeff(&maxindB));
-        eigdiffsB.push_back(fabs(eigsB[ispec]-eigsC[maxindB]));
+        maxoverlapA.push_back(statoverlapA.Mean());
+                eigdiffsA.push_back(stateigdiffA.Mean());
+        //        maxoverlapB.push_back(statoverlapB.Mean());
+        //        eigdiffsB.push_back(stateigdiffB.Mean());
         //plotter.plot2(esB.eigenvalues(), overlapA);
         //plotter.plot2(esC.eigenvalues(), overlapB);
         //plotter.writeToFile("parafermions_"+std::to_string(f), esA.eigenvalues(), esB.eigenvalues(), esC.eigenvalues());
@@ -319,20 +328,21 @@ int main() {
     forloop.loop(body, fparams);
     PlotterData pdA, pdB, pdAe, pdBe;
     pdA.style = "l";
-    pdA.input = "parfermion_A_super_" + std::to_string(width);
-    pdB.input = "parfermion_B_super_" + std::to_string(width);
+    pdA.input = "parfermion_mean_A_" + std::to_string(width);
+    pdB.input = "parfermion_mean_B_" + std::to_string(width);
     //plotter.plot2(fs, maxoverlap, pd);
     pdAe.input = pdA.input + std::string("_eigdiff");
     pdBe.input = pdB.input + std::string("_eigdiff");
     plotter.plot2(fs, eigdiffsA, pdAe);
     plotter.plot2(fs, maxoverlapA, pdA);
-    plotter.plot2(fs, eigdiffsB, pdBe);
-    plotter.plot2(fs, maxoverlapB, pdB);
+    //plotter.plot2(fs, eigdiffsB, pdBe);
+    //plotter.plot2(fs, maxoverlapB, pdB);
     plotter.wait();
     return 0;
 
 }
 #endif 
+
 
 
 
