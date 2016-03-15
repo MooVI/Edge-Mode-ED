@@ -45,6 +45,7 @@ OBJECTFILES= \
 	${OBJECTDIR}/exact_diag_basis_f.o \
 	${OBJECTDIR}/exact_diag_basis_xyz.o \
 	${OBJECTDIR}/exact_diag_mean.o \
+	${OBJECTDIR}/ising_dists.o \
 	${OBJECTDIR}/length_XYZ.o \
 	${OBJECTDIR}/length_ising.o \
 	${OBJECTDIR}/parafermion.o \
@@ -131,6 +132,11 @@ ${OBJECTDIR}/exact_diag_mean.o: exact_diag_mean.cpp
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
 	$(COMPILE.cc) -I../.. -I.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/exact_diag_mean.o exact_diag_mean.cpp
+
+${OBJECTDIR}/ising_dists.o: ising_dists.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} "$@.d"
+	$(COMPILE.cc) -I../.. -I.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/ising_dists.o ising_dists.cpp
 
 ${OBJECTDIR}/length_XYZ.o: length_XYZ.cpp 
 	${MKDIR} -p ${OBJECTDIR}

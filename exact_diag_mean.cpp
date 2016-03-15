@@ -26,7 +26,7 @@ using NumMethod::posmod;
 typedef double mpreal;
 typedef unsigned long ulong;
 
-constexpr ulong width = 8;
+constexpr ulong width = 12;
 constexpr ulong ignoremask = ~((1 << (width -1))-1);
 
 template <int N>
@@ -90,6 +90,19 @@ inline int sigma_z_j_z_m(ulong x, ulong y, ulong j, ulong m, powersoftwo<N> pows
     return (x == y) * (2 * ((x & pows(j)) >> j) - 1)*(2 * ((x & pows(m)) >> m) - 1);
 }
 
+template <int N>
+inline int sigma_z_p_x_j_z_m(ulong x, ulong y, ulong p, ulong j, ulong m, powersoftwo<N> pows) {
+    return ( 
+            (x == (y^pows(j)))
+               ^( (j == width-1) and (
+                                   (x | ignoremask) == ((~y) | ignoremask)
+                                    )
+                 )
+            )*(-2 * ((pows(j) & y & pows(width-1)) >> (width-1)) + 1) 
+            * (2 * ((x & pows(p)) >> p) - 1)
+            *(2 * ((x & pows(m)) >> m) - 1);
+}
+
 /*
  * 
  */
@@ -106,9 +119,11 @@ int main() {
 
     const double r = 0.05;
     const double J2 = 0.00;
-    const double J = 1.0;
+    const double J3 = 1.0;
+    const double J4 = 0.0;
+    const double J = 0.0;
     const double f = 0.2;
-    const double V = 0.0;
+    const double V = 0.1;
     
    NumMethod::RunningStats<mpreal> statoverlap, stateigdiff;
     
@@ -141,7 +156,8 @@ int main() {
     
     NumMethod::ForLoopParams<mpreal> fparams;
     fparams.numPoints = 100; fparams.start = 0.0; fparams.end = 1.5;
-    auto body = [&](mpreal J2, int i) {
+    auto body = [&](mpreal J4, int i) {
+        const double Js [] = {J3, J4};
         HE = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
         HO = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
 
@@ -153,11 +169,13 @@ int main() {
                     HE(i, j) += -f * sigma_x_j(i, j, jsite, pows2)
                             - J * sigma_z_j_z_m(i, j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
                             - J2 * sigma_z_j_z_m(i, j, jsite, jsite + 2, pows2)*(((jsite + 2) < width))
-                            - V * sigma_x_j_x_m(i, j, jsite, jsite + 1, pows2)*((jsite + 1) < width);
+                            - V * sigma_x_j_x_m(i, j, jsite, jsite + 1, pows2)*((jsite + 1) < width)
+                            -Js[jsite%2] * sigma_z_p_x_j_z_m(i, j, jsite, jsite+1, jsite+2, pows2)*(((jsite + 2) < width));
                     HO(i, j) += -f * sigma_x_j(~i, ~j, jsite, pows2)
                             - J * sigma_z_j_z_m(~i, ~j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
                             - J2 * sigma_z_j_z_m(~i, ~j, jsite, jsite + 2, pows2)*(((jsite + 2) < width))
-                            - V * sigma_x_j_x_m(~i, ~j, jsite, jsite + 1, pows2)*((jsite + 1) < width);
+                            - V * sigma_x_j_x_m(~i, ~j, jsite, jsite + 1, pows2)*((jsite + 1) < width)
+                            -Js[jsite%2] * sigma_z_p_x_j_z_m(~i, ~j, jsite, jsite+1, jsite+2, pows2)*(((jsite + 2) < width));
                 }
             }
         }
@@ -189,7 +207,7 @@ int main() {
         statoverlap.Push(overlap.abs().maxCoeff(&maxind));
         stateigdiff.Push(fabs(eigsE[ispec]-eigsO[maxind]));
         }
-        fs.push_back(J2);
+        fs.push_back(J4);
         maxoverlap.push_back(statoverlap.Mean());
         eigdiffs.push_back(stateigdiff.Mean());
         statoverlap.Clear();
@@ -208,7 +226,7 @@ int main() {
     
     PlotterData pd, pd2;
     pd.style = "l";
-    pd.input = "Ising_J_f_0.5_mean_" + std::to_string(width);
+    pd.input = "Ising_chris_mean_" + std::to_string(width);
     plotter.plot2(fs, maxoverlap, pd);
     pd2.input = pd.input + std::string("_eigdiff"); 
     plotter.plot2(fs, eigdiffs, pd2);

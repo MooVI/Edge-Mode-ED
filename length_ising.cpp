@@ -89,6 +89,19 @@ inline int sigma_z_j_z_m(ulong x, ulong y, ulong j, ulong m, powersoftwo<N> pows
     return (x == y) * (2 * ((x & pows(j)) >> j) - 1)*(2 * ((x & pows(m)) >> m) - 1);
 }
 
+template <int N>
+inline int sigma_z_p_x_j_z_m(ulong x, ulong y, ulong p, ulong j, ulong m, powersoftwo<N> pows, const int width, const int ignoremask) {
+    return ( 
+            (x == (y^pows(j)))
+               ^( (j == width-1) and (
+                                   (x | ignoremask) == ((~y) | ignoremask)
+                                    )
+                 )
+            )*(-2 * ((pows(j) & y & pows(width-1)) >> (width-1)) + 1) 
+            * (2 * ((x & pows(p)) >> p) - 1)
+            *(2 * ((x & pows(m)) >> m) - 1);
+}
+
 /*
  * 
  */
@@ -104,10 +117,13 @@ int main() {
     typedef Eigen::Array<mpreal, Eigen::Dynamic, 1> Arrayw;
 
     const double r = 0.05;
-    const double J2 = 0.95;
+    const double J2 = 0.00;
+    const double J3 = 0.0;
+    const double J4 = 0.0;
     const double J = 1.0;
-    const double f = 0.05;
-    const double V = 0.0;
+    const double f = 0.2;
+    const double V = 0.1;
+    const double Js [] = {J3, J4};
     
    NumMethod::RunningStats<mpreal> statoverlap, stateigdiff;
     
@@ -141,11 +157,13 @@ int main() {
                     HE(i, j) += -f * sigma_x_j(i, j, jsite, pows2, width, ignoremask)
                             - J * sigma_z_j_z_m(i, j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
                             - J2 * sigma_z_j_z_m(i, j, jsite, jsite + 2, pows2)*(((jsite + 2) < width))
-                            - V * sigma_x_j_x_m(i, j, jsite, jsite + 1, pows2, width, ignoremask)*((jsite + 1) < width);
+                            - V * sigma_x_j_x_m(i, j, jsite, jsite + 1, pows2, width, ignoremask)*((jsite + 1) < width)
+                            -Js[jsite%2] * sigma_z_p_x_j_z_m(i, j, jsite, jsite+1, jsite+2, pows2, width, ignoremask)*(((jsite + 2) < width));
                     HO(i, j) += -f * sigma_x_j(~i, ~j, jsite, pows2, width, ignoremask)
                             - J * sigma_z_j_z_m(~i, ~j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
                             - J2 * sigma_z_j_z_m(~i, ~j, jsite, jsite + 2, pows2)*(((jsite + 2) < width))
-                            - V * sigma_x_j_x_m(~i, ~j, jsite, jsite + 1, pows2, width, ignoremask)*((jsite + 1) < width);
+                            - V * sigma_x_j_x_m(~i, ~j, jsite, jsite + 1, pows2, width, ignoremask)*((jsite + 1) < width)
+                            -Js[jsite%2] * sigma_z_p_x_j_z_m(~i, ~j, jsite, jsite+1, jsite+2, pows2, width, ignoremask)*(((jsite + 2) < width));
                 }
             }
         }
@@ -167,9 +185,6 @@ int main() {
         Arrayw overlap = Vectorw::Zero(pows2(width - 1));
         Arrayw accumulator(pows2(width - 1));
         for (int i = 0; i < sigz.size(); i++) {
-            //for (int j = 0; j < sigz.size(); j++)
-            //    accumulator[j] = spec[j]*(sigz[j] * evecsO.col(i)[j] + f * sigz2[j] * evecsO.col(i)[j^1]);
-            //overlap[i] = accumulator.sum();
             overlap[i] += (spec*sigz*evecsO.col(i).array()).sum();     
         }
         
@@ -182,10 +197,6 @@ int main() {
         evars.push_back(stateigdiff.Variance());
         statoverlap.Clear();
         stateigdiff.Clear();
-        //PlotterData pd;
-        //pd.style = "l";
-        //plotter.plot2(eigsE, overlap, pd);
-        //std::system("pause");
         return false;
     };
     
