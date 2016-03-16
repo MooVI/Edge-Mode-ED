@@ -5,7 +5,7 @@
  * Created on 13 October 2014, 11:54
  */
 
-#if 0
+#if 1
 
 #include<Eigen/Dense>
 //#include<Eigen/unsupported/Eigen/MPRealSupport>
@@ -157,9 +157,12 @@ int main() {
 
         Arrayw sigz(pows2(width - 1));
         Arrayw sigz2(pows2(width - 1));
+        Arrayw sigzn(pows2(width - 1));
+        const int nbulk = pows2(width-2)-1;
         for (int i = 0; i < sigz.size(); i++) {
             sigz[i] = i % 2 == 0 ? 1 : -1;
             sigz2[i] = i % 4 < 2 ? 1 : -1;
+            sigzn[i] = (2 * ((i & pows2(nbulk)) >> nbulk) - 1);
         }
 
         auto couplingsbody = [&](double J2, int j) {
@@ -207,7 +210,7 @@ int main() {
                 for (int ispec = 0; ispec < pows2(width - 1); ispec++) {
                     auto spec = evecsE.col(ispec).array();
                     for (int i = 0; i < sigz.size(); i++) {
-                        overlap(i, ispec) += (spec * sigz * evecsO.col(i).array()).sum();
+                        overlap(i, ispec) += (spec * sigzn * evecsO.col(i).array()).sum();
                     }
                     std::ofstream outoverlaps;
                     outoverlaps.open((label + "_overlaps_states").c_str(), std::ios::trunc);
@@ -225,7 +228,7 @@ int main() {
                 for (int ispec = 0; ispec < pows2(width - 1); ispec++) {
                     auto spec = evecsE.col(ispec).array();
                     for (int i = 0; i < sigz.size(); i++) {
-                        overlap(i) += (spec * sigz * evecsO.col(i).array()).sum();
+                        overlap(i) += (spec * sigzn * evecsO.col(i).array()).sum();
                     }
                     int maxind;
                     moverlaps[ispec] = overlap.abs().maxCoeff(&maxind);
@@ -242,25 +245,6 @@ int main() {
                 plotter.writeToFile(label + "_maxoverlaps", moverlaps);
             if (WRITE_PAIRED_EDIFFS)
                 plotter.writeToFile(label + "_pairedeigdiffs", meigdiff);
-            if (WRITE_BULK) {
-                Arrayww overlap = Matrixww::Zero(pows2(width - 1), width);
-                const int bulkspec = pows2(width - 2);
-                for (int jsite = 0; jsite < width; jsite++) {
-                    Arrayw sigzn(pows2(width - 1));
-                    for (int i = 0; i < sigzn.size(); i++) {
-                        sigzn[i] = (2 * ((i & pows2(jsite)) >> jsite) - 1);
-                    }
-                    auto spec = evecsE.col(bulkspec).array();
-                    for (int i = 0; i < sigz.size(); i++) {
-                        overlap(i, jsite) += (spec * sigzn * evecsO.col(i).array()).sum();
-                    }
-                    std::ofstream outoverlaps;
-                    outoverlaps.open((label + "_overlaps_bulk").c_str(), std::ios::trunc);
-                    outoverlaps << overlap;
-                    outoverlaps.flush();
-                    outoverlaps.close();
-                }
-            }
             if (WRITE_MEANS) {
                 maxoverlap.push_back(moverlaps.mean());
                 eigdiffs.push_back(meigdiff.mean());
@@ -284,6 +268,7 @@ int main() {
 
 }
 #endif 
+
 
 
 
