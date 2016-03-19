@@ -5,7 +5,7 @@
  * Created on 13 October 2014, 11:54
  */
 
-#if 0
+#if 1
 
 #include<Eigen/Dense>
 //#include<Eigen/unsupported/Eigen/MPRealSupport>
@@ -107,10 +107,10 @@ int main() {
     constexpr int maxwidth = 16;
     powersoftwo < maxwidth + 1 > pows2;
     
-    const bool WRITE_ENERGIES = true;
-    const bool WRITE_OVERLAPS = true;
-    const bool WRITE_BULK = true;
-    const bool WRITE_MEANS = true;
+    const bool WRITE_ENERGIES = false;
+    const bool WRITE_OVERLAPS = false;
+    const bool WRITE_BULK = false;
+    const bool WRITE_MEANS = false;
     const bool WRITE_MAX_OVERLAPS = true;
     const bool WRITE_PAIRED_EDIFFS = true;
     
@@ -137,9 +137,9 @@ int main() {
 
     NumMethod::ForLoopParams<mpreal> fparams;
     NumMethod::EqualSpaceFor couplingsfor;
-    fparams.numPoints = 2;
-    fparams.start = 0.6;
-    fparams.end = 0.95;
+    fparams.numPoints = 10;
+    fparams.start = 0.00;
+    fparams.end = 1.0;
 
     std::vector<mpreal> maxoverlap, eigdiffs;
     std::vector<mpreal> fs = couplingsfor.get_x(fparams);
