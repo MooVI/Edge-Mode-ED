@@ -104,13 +104,13 @@ int main() {
     //mpreal::set_default_prec(128);
     ScatterPlotter plotter;
 
-    constexpr int maxwidth = 16;
+    constexpr int maxwidth = 10;
     powersoftwo < maxwidth + 1 > pows2;
     
-    const bool WRITE_ENERGIES = true;
+    const bool WRITE_ENERGIES = false;
     const bool WRITE_OVERLAPS = true;
-    const bool WRITE_BULK = true;
-    const bool WRITE_MEANS = true;
+    const bool WRITE_BULK = false;
+    const bool WRITE_MEANS = false;
     const bool WRITE_MAX_OVERLAPS = true;
     const bool WRITE_PAIRED_EDIFFS = true;
     
@@ -132,14 +132,14 @@ int main() {
     NumMethod::RunningStats<mpreal> statoverlap, stateigdiff;
 
 
-    const int begin = 6;
-    const int end = 17;
+    const int begin = 10;
+    const int end = 11;
 
     NumMethod::ForLoopParams<mpreal> fparams;
     NumMethod::EqualSpaceFor couplingsfor;
-    fparams.numPoints = 2;
-    fparams.start = 0.6;
-    fparams.end = 0.95;
+    fparams.numPoints = 30;
+    fparams.start = 0.0;
+    fparams.end = 1.00;
 
     std::vector<mpreal> maxoverlap, eigdiffs;
     std::vector<mpreal> fs = couplingsfor.get_x(fparams);
@@ -162,7 +162,7 @@ int main() {
             sigz2[i] = i % 4 < 2 ? 1 : -1;
         }
 
-        auto couplingsbody = [&](double J2, int j) {
+        auto couplingsbody = [&](double f, int j) {
             HE = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
             HO = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
 
@@ -195,7 +195,7 @@ int main() {
             auto eigsO = esO.eigenvalues();
             auto evecsE = esE.eigenvectors();
             auto evecsO = esO.eigenvectors();
-            std::string label = "Ising_L_" + std::to_string(width) + "_f_" + std::to_string(f)
+            std::string label = "Ising_twoterms_L_" + std::to_string(width) + "_f_" + std::to_string(f)
                     + "_J2_" + std::to_string(J2);
 
             std::ofstream outEs;
@@ -271,7 +271,7 @@ int main() {
         };
         couplingsfor.loop(couplingsbody, fparams);
         if (WRITE_MEANS) {
-            std::string label = "Ising_L_" + std::to_string(width) + "_f_" + std::to_string(f);
+            std::string label = "Ising_twoterms_L_" + std::to_string(width) + "_f_" + std::to_string(f);
             plotter.writeToFile(label + "_meanoverlap", fs, maxoverlap);
             plotter.writeToFile(label + "_meanediff", fs, eigdiffs);
         }
