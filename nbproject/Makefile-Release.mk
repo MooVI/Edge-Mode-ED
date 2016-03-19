@@ -35,6 +35,7 @@ OBJECTDIR=${CND_BUILDDIR}/${CND_CONF}/${CND_PLATFORM}
 
 # Object Files
 OBJECTFILES= \
+	${OBJECTDIR}/XYZ_dists.o \
 	${OBJECTDIR}/XYZ_mean.o \
 	${OBJECTDIR}/XYZ_stagger.o \
 	${OBJECTDIR}/decay_XYZ.o \
@@ -83,6 +84,11 @@ ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/tp11_1: ../../NumericalMethods/Numeri
 ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/tp11_1: ${OBJECTFILES}
 	${MKDIR} -p ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}
 	${LINK.cc} -o ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/tp11_1 ${OBJECTFILES} ${LDLIBSOPTIONS}
+
+${OBJECTDIR}/XYZ_dists.o: XYZ_dists.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} "$@.d"
+	$(COMPILE.cc) -I../.. -I.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/XYZ_dists.o XYZ_dists.cpp
 
 ${OBJECTDIR}/XYZ_mean.o: XYZ_mean.cpp 
 	${MKDIR} -p ${OBJECTDIR}
