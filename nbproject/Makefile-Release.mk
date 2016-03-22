@@ -15,8 +15,8 @@ NM=nm
 CCADMIN=CCadmin
 RANLIB=ranlib
 CC=gcc
-CCC=g++
-CXX=g++
+CCC=icpc
+CXX=icpc
 FC=gfortran
 AS=as
 
@@ -62,8 +62,8 @@ OBJECTFILES= \
 CFLAGS=
 
 # CC Compiler Flags
-CCFLAGS=-m64 -lmpfr -lgmp -march=native -Ofast -pthread
-CXXFLAGS=-m64 -lmpfr -lgmp -march=native -Ofast -pthread
+CCFLAGS=-O3 -qopenmp -xCORE-AVX-I -I${MKLROOT}/include
+CXXFLAGS=-O3 -qopenmp -xCORE-AVX-I -I${MKLROOT}/include
 
 # Fortran Compiler Flags
 FFLAGS=
@@ -72,7 +72,7 @@ FFLAGS=
 ASFLAGS=
 
 # Link Libraries and Options
-LDLIBSOPTIONS=../../Plotting/Plotter/dist/Release/GNU-Linux-x86/libplotter.a ../../NumericalMethods/NumericalMethods/dist/Release/GNU-Linux-x86/libnumericalmethods.a
+LDLIBSOPTIONS=../../Plotting/Plotter/dist/Release/GNU-Linux-x86/libplotter.a ../../NumericalMethods/NumericalMethods/dist/Release/GNU-Linux-x86/libnumericalmethods.a  -L${MKLROOT}/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_intel_thread -lpthread -lm -ldl
 
 # Build Targets
 .build-conf: ${BUILD_SUBPROJECTS}

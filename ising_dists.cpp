@@ -7,6 +7,8 @@
 
 #if 1
 
+#define EIGEN_USE_MKL_ALL 1
+
 #include<Eigen/Dense>
 //#include<Eigen/unsupported/Eigen/MPRealSupport>
 #include<NumericalMethods/NumericalMethods/Random.h>
@@ -20,6 +22,8 @@
 #include<chrono>
 #include<functional>
 #include<string>
+
+#
 
 using NumMethod::posmod;
 
