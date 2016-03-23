@@ -5,7 +5,7 @@
  * Created on 13 October 2014, 11:54
  */
 
-#if 0
+#if 1
 
 #include<Eigen/Dense>
 //#include<Eigen/unsupported/Eigen/MPRealSupport>
@@ -26,7 +26,7 @@ using NumMethod::posmod;
 typedef double mpreal;
 typedef unsigned long ulong;
 
-constexpr ulong width = 12;
+constexpr ulong width = 10;
 constexpr ulong ignoremask = ~((1 << (width -1))-1);
 
 template <int N>
@@ -170,12 +170,12 @@ int main() {
                             - J * sigma_z_j_z_m(i, j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
                             - J2 * sigma_z_j_z_m(i, j, jsite, jsite + 2, pows2)*(((jsite + 2) < width))
                             - V * sigma_x_j_x_m(i, j, jsite, jsite + 1, pows2)*((jsite + 1) < width)
-                            -Js[jsite%2] * sigma_z_p_x_j_z_m(i, j, jsite, jsite+1, jsite+2, pows2)*(((jsite + 2) < width));
+                            -Js[jsite==0 ? 0 : 1] * sigma_z_p_x_j_z_m(i, j, jsite, jsite+1, jsite+2, pows2)*(((jsite + 2) < width));
                     HO(i, j) += -f * sigma_x_j(~i, ~j, jsite, pows2)
                             - J * sigma_z_j_z_m(~i, ~j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
                             - J2 * sigma_z_j_z_m(~i, ~j, jsite, jsite + 2, pows2)*(((jsite + 2) < width))
                             - V * sigma_x_j_x_m(~i, ~j, jsite, jsite + 1, pows2)*((jsite + 1) < width)
-                            -Js[jsite%2] * sigma_z_p_x_j_z_m(~i, ~j, jsite, jsite+1, jsite+2, pows2)*(((jsite + 2) < width));
+                            -Js[jsite==0 ? 0 : 1] * sigma_z_p_x_j_z_m(~i, ~j, jsite, jsite+1, jsite+2, pows2)*(((jsite + 2) < width));
                 }
             }
         }
@@ -226,7 +226,7 @@ int main() {
     
     PlotterData pd, pd2;
     pd.style = "l";
-    pd.input = "Ising_chris_mean_" + std::to_string(width);
+    pd.input = "Ising_chris_random_mean_" + std::to_string(width);
     plotter.plot2(fs, maxoverlap, pd);
     pd2.input = pd.input + std::string("_eigdiff"); 
     plotter.plot2(fs, eigdiffs, pd2);
