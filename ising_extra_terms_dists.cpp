@@ -202,12 +202,15 @@ int main() {
             if (WRITE_ENERGIES)
                 outEs.open((label + "_energies").c_str(), std::ios::trunc);
 
+	    Arrayw accumulator(pows2(width - 1));
             if (WRITE_OVERLAPS) {
                 Arrayww overlap = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
                 for (int ispec = 0; ispec < pows2(width - 1); ispec++) {
                     auto spec = evecsE.col(ispec).array();
                     for (int i = 0; i < sigz.size(); i++) {
-                        overlap(i, ispec) += (spec * sigz * evecsO.col(i).array()).sum();
+		      for (int j = 0; j < sigz.size(); j++)
+			accumulator[j] = spec[j]*(sigz[j] * evecsO.col(i)[j] + f * sigz2[j] * evecsO.col(i)[j^1]);
+		      overlap(i, ispec) = accumulator.sum();
                     }
                     std::ofstream outoverlaps;
                     outoverlaps.open((label + "_overlaps_states").c_str(), std::ios::trunc);

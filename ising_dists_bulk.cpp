@@ -5,7 +5,7 @@
  * Created on 13 October 2014, 11:54
  */
 
-#if 1
+#if 0
 
 #include<Eigen/Dense>
 //#include<Eigen/unsupported/Eigen/MPRealSupport>
@@ -104,13 +104,13 @@ int main() {
     //mpreal::set_default_prec(128);
     ScatterPlotter plotter;
 
-    constexpr int maxwidth = 16;
+    constexpr int maxwidth = 12;
     powersoftwo < maxwidth + 1 > pows2;
     
-    const bool WRITE_ENERGIES = true;
+    const bool WRITE_ENERGIES = false;
     const bool WRITE_OVERLAPS = true;
-    const bool WRITE_BULK = true;
-    const bool WRITE_MEANS = true;
+    const bool WRITE_BULK = false;
+    const bool WRITE_MEANS = false;
     const bool WRITE_MAX_OVERLAPS = true;
     const bool WRITE_PAIRED_EDIFFS = true;
     
@@ -132,8 +132,8 @@ int main() {
     NumMethod::RunningStats<mpreal> statoverlap, stateigdiff;
 
 
-    const int begin = 6;
-    const int end = 17;
+    const int begin = 12;
+    const int end = 13;
 
     NumMethod::ForLoopParams<mpreal> fparams;
     NumMethod::EqualSpaceFor couplingsfor;
@@ -198,7 +198,7 @@ int main() {
             auto eigsO = esO.eigenvalues();
             auto evecsE = esE.eigenvectors();
             auto evecsO = esO.eigenvectors();
-            std::string label = "Ising_L_" + std::to_string(width) + "_f_" + std::to_string(f)
+            std::string label = "Ising_bulk_L_" + std::to_string(width) + "_f_" + std::to_string(f)
                     + "_J2_" + std::to_string(J2);
 
             std::ofstream outEs;
@@ -210,7 +210,7 @@ int main() {
                 for (int ispec = 0; ispec < pows2(width - 1); ispec++) {
                     auto spec = evecsE.col(ispec).array();
                     for (int i = 0; i < sigz.size(); i++) {
-                        overlap(i, ispec) += (spec * sigzn * evecsO.col(i).array()).sum();
+                        overlap(i, ispec) = (spec * sigzn * evecsO.col(i).array()).sum();
                     }
                     std::ofstream outoverlaps;
                     outoverlaps.open((label + "_overlaps_states").c_str(), std::ios::trunc);
@@ -228,7 +228,7 @@ int main() {
                 for (int ispec = 0; ispec < pows2(width - 1); ispec++) {
                     auto spec = evecsE.col(ispec).array();
                     for (int i = 0; i < sigz.size(); i++) {
-                        overlap(i) += (spec * sigzn * evecsO.col(i).array()).sum();
+                        overlap(i) = (spec * sigzn * evecsO.col(i).array()).sum();
                     }
                     int maxind;
                     moverlaps[ispec] = overlap.abs().maxCoeff(&maxind);
