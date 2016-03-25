@@ -100,11 +100,11 @@ inline int sigma_z_p_x_j_z_m(ulong x, ulong y, ulong p, ulong j, ulong m, powers
 /*
  * 
  */
-int main() {
+int main(int argc, char** argv) {
     //mpreal::set_default_prec(128);
     ScatterPlotter plotter;
 
-    constexpr int maxwidth = 10;
+    constexpr int maxwidth = 16;
     powersoftwo < maxwidth + 1 > pows2;
     
     const bool WRITE_ENERGIES = false;
@@ -114,6 +114,8 @@ int main() {
     const bool WRITE_VARS = true;
     const bool WRITE_MAX_OVERLAPS = false;
     const bool WRITE_PAIRED_EDIFFS = false;
+
+    const bool CMD_LINE_PARAMS = true;
     
 
     typedef Eigen::Matrix<mpreal, Eigen::Dynamic, Eigen::Dynamic> Matrixww;
@@ -136,11 +138,19 @@ int main() {
     const int begin = 10;
     const int end = 11;
 
+    std::string hashlabel = "";
+    if (CMD_LINE_PARAMS and argc > 4)
+      hashlabel = std::string(argv[4]);
+
     NumMethod::ForLoopParams<mpreal> fparams;
     NumMethod::EqualSpaceFor couplingsfor;
-    fparams.numPoints = 101;
-    fparams.start = 0.0;
-    fparams.end = 1.0;
+    fparams.start = 0.;
+    fparams.end = 1.;
+    fparams.numPoints = 100;
+    
+    if (CMD_LINE_PARAMS)
+      fparams = NumMethod::get_for_from_cmd<mpreal>(argv);
+    
 
     std::vector<mpreal> maxoverlap, eigdiffs, varoverlaps, vareigdiffs;
     std::vector<mpreal> fs = couplingsfor.get_x(fparams);
@@ -285,7 +295,7 @@ int main() {
             return false;
         };
         couplingsfor.loop(couplingsbody, fparams);
-	std::string label = "Ising_L_" + std::to_string(width) + "_f_" + std::to_string(f);
+	std::string label = hashlabel + "Ising_L_" + std::to_string(width) + "_f_" + std::to_string(f);
         if (WRITE_MEANS) {
             plotter.writeToFile(label + "_meanoverlap", fs, maxoverlap);
             plotter.writeToFile(label + "_meanediff", fs, eigdiffs);
