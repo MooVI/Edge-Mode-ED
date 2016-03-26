@@ -139,8 +139,8 @@ int main(int argc, char** argv) {
     NumMethod::RunningStats<mpreal> statoverlap, stateigdiff;
 
 
-    const int begin = 10;
-    const int end = 11;
+    const int begin = 14;
+    const int end = 15;
 
     std::string hashlabel = "";
     if (CMD_LINE_PARAMS and argc > 4)
