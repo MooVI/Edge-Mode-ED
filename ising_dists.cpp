@@ -8,7 +8,7 @@
 #if 1
 
 #include<Eigen/Dense>
-//#include<Eigen/unsupported/Eigen/MPRealSupport>
+#include<Eigen/MPRealSupport>
 #include<NumericalMethods/NumericalMethods/Random.h>
 #include<NumericalMethods/NumericalMethods/Statistics.h>
 #include<NumericalMethods/NumericalMethods/SamplingForLoops.h>
@@ -23,7 +23,8 @@
 
 using NumMethod::posmod;
 
-typedef double mpreal;
+typedef mpfr::mpreal mpreal;
+//typedef double mpreal;
 typedef unsigned long ulong;
 
 template <int N>
@@ -97,11 +98,23 @@ inline int sigma_z_p_x_j_z_m(ulong x, ulong y, ulong p, ulong j, ulong m, powers
             *(2 * ((x & pows(m)) >> m) - 1);
 }
 
+template<typename T>
+std::string to_string(T value){
+    return std::to_string(value);
+}
+
+template<>
+std::string to_string(mpfr::mpreal value){
+    return std::to_string(value.toDouble());
+}
+
+
+
 /*
  * 
  */
 int main(int argc, char** argv) {
-    //mpreal::set_default_prec(128);
+    mpfr::mpreal::set_default_prec(128);
     ScatterPlotter plotter;
 
     constexpr int maxwidth = 16;
@@ -123,14 +136,14 @@ int main(int argc, char** argv) {
     typedef Eigen::Array<mpreal, Eigen::Dynamic, 1> Arrayw;
     typedef Eigen::Array<mpreal, Eigen::Dynamic, Eigen::Dynamic> Arrayww;
 
-    const double r = 0.05;
-    const double J2 = 0.00;
-    const double J3 = 0.0;
-    const double J4 = 0.0;
-    const double J = 1.0;
-    const double f = 0.05;
-    const double V = 0.0;
-    const double Js [] = {J3, J4};
+    const mpreal r = 0.05;
+    const mpreal J2 = 0.00;
+    const mpreal J3 = 0.0;
+    const mpreal J4 = 0.0;
+    const mpreal J = 1.0;
+    const mpreal f = 0.05;
+    const mpreal V = 0.0;
+    const mpreal Js [] = {J3, J4};
 
     NumMethod::RunningStats<mpreal> statoverlap, stateigdiff;
 
@@ -173,11 +186,11 @@ int main(int argc, char** argv) {
             sigz2[i] = i % 4 < 2 ? 1 : -1;
         }
 
-        auto couplingsbody = [&](double J2, int j) {
+        auto couplingsbody = [&](mpreal J2, int j) {
             HE = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
             HO = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
 
-            //std::cout<< std::to_string(sigma_z_j(0, 0, 0, pows2)*((0+1) < width));
+            //std::cout<< to_string(sigma_z_j(0, 0, 0, pows2)*((0+1) < width));
 
             for (ulong i = 0; i < pows2(width - 1); i++) {
                 for (ulong j = 0; j < pows2(width - 1); j++) {
@@ -206,8 +219,8 @@ int main(int argc, char** argv) {
             auto eigsO = esO.eigenvalues();
             auto evecsE = esE.eigenvectors();
             auto evecsO = esO.eigenvectors();
-            std::string label = "Ising_test_L_" + std::to_string(width) + "_f_" + std::to_string(f)
-                    + "_J2_" + std::to_string(J2);
+            std::string label = "Ising_test_L_" + to_string(width) + "_f_" + to_string(f)
+                    + "_J2_" + to_string(J2);
 
             std::ofstream outEs;
             if (WRITE_ENERGIES)
@@ -295,7 +308,7 @@ int main(int argc, char** argv) {
             return false;
         };
         couplingsfor.loop(couplingsbody, fparams);
-	std::string label = hashlabel + "Ising_L_" + std::to_string(width) + "_f_" + std::to_string(f);
+	std::string label = hashlabel + "Ising_L_" + to_string(width) + "_f_" + to_string(f);
         if (WRITE_MEANS) {
             plotter.writeToFile(label + "_meanoverlap", fs, maxoverlap);
             plotter.writeToFile(label + "_meanediff", fs, eigdiffs);
