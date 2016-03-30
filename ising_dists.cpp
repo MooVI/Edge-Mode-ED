@@ -23,8 +23,8 @@
 
 using NumMethod::posmod;
 
-typedef mpfr::mpreal mpreal;
-//typedef double mpreal;
+//typedef mpfr::mpreal mpreal;
+typedef double mpreal;
 typedef unsigned long ulong;
 
 template <int N>
@@ -123,7 +123,7 @@ int main(int argc, char** argv) {
     const bool WRITE_ENERGIES = false;
     const bool WRITE_OVERLAPS = false;
     const bool WRITE_BULK = false;
-    const bool WRITE_MEANS = false;
+    const bool WRITE_MEANS = true;
     const bool WRITE_VARS = true;
     const bool WRITE_MAX_OVERLAPS = false;
     const bool WRITE_PAIRED_EDIFFS = false;
@@ -145,11 +145,11 @@ int main(int argc, char** argv) {
     const mpreal V = 0.0;
     const mpreal Js [] = {J3, J4};
 
-    NumMethod::RunningStats<mpreal> statoverlap, stateigdiff;
+    NumMethod::RunningStats<mpfr::mpreal> statoverlap, stateigdiff;
 
 
-    const int begin = 10;
-    const int end = 11;
+    const int begin = 12;
+    const int end = 13;
 
     std::string hashlabel = "";
     if (CMD_LINE_PARAMS and argc > 4)
@@ -165,7 +165,7 @@ int main(int argc, char** argv) {
       fparams = NumMethod::get_for_from_cmd<mpreal>(argv);
     
 
-    std::vector<mpreal> maxoverlap, eigdiffs, varoverlaps, vareigdiffs;
+    std::vector<mpfr::mpreal> maxoverlap, eigdiffs, varoverlaps, vareigdiffs;
     std::vector<mpreal> fs = couplingsfor.get_x(fparams);
 
     auto body = [&](int width, int i) {
@@ -186,7 +186,7 @@ int main(int argc, char** argv) {
             sigz2[i] = i % 4 < 2 ? 1 : -1;
         }
 
-        auto couplingsbody = [&](mpreal J2, int j) {
+        auto couplingsbody = [&](mpreal V, int j) {
             HE = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
             HO = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
 
@@ -220,7 +220,7 @@ int main(int argc, char** argv) {
             auto evecsE = esE.eigenvectors();
             auto evecsO = esO.eigenvectors();
             std::string label = "Ising_test_L_" + to_string(width) + "_f_" + to_string(f)
-                    + "_J2_" + to_string(J2);
+                    + "_V_" + to_string(V);
 
             std::ofstream outEs;
             if (WRITE_ENERGIES)
@@ -308,7 +308,7 @@ int main(int argc, char** argv) {
             return false;
         };
         couplingsfor.loop(couplingsbody, fparams);
-	std::string label = hashlabel + "Ising_L_" + to_string(width) + "_f_" + to_string(f);
+	std::string label = hashlabel + "V_Ising_L_" + to_string(width) + "_f_" + to_string(f);
         if (WRITE_MEANS) {
             plotter.writeToFile(label + "_meanoverlap", fs, maxoverlap);
             plotter.writeToFile(label + "_meanediff", fs, eigdiffs);

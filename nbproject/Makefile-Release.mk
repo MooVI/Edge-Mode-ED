@@ -72,7 +72,7 @@ FFLAGS=
 ASFLAGS=
 
 # Link Libraries and Options
-LDLIBSOPTIONS=../../Plotting/Plotter/dist/Release/GNU-Linux-x86/libplotter.a ../../NumericalMethods/NumericalMethods/dist/Release/GNU-Linux-x86/libnumericalmethods.a
+LDLIBSOPTIONS=../../Plotting/Plotter/dist/Release/GNU-Linux-x86/libplotter.a ../../NumericalMethods/NumericalMethods/dist/Release/GNU-Linux-x86/libnumericalmethods.a -lmpfr -lgmp
 
 # Build Targets
 .build-conf: ${BUILD_SUBPROJECTS}
