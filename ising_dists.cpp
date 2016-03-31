@@ -111,13 +111,13 @@ int main(int argc, char** argv) {
     constexpr int maxwidth = 16;
     powersoftwo < maxwidth + 1 > pows2;
     
-    const bool WRITE_ENERGIES = false;
+    const bool WRITE_ENERGIES = true;
     const bool WRITE_OVERLAPS = false;
     const bool WRITE_BULK = false;
     const bool WRITE_MEANS = false;
-    const bool WRITE_VARS = true;
-    const bool WRITE_MAX_OVERLAPS = false;
-    const bool WRITE_PAIRED_EDIFFS = false;
+    const bool WRITE_VARS = false;
+    const bool WRITE_MAX_OVERLAPS = true;
+    const bool WRITE_PAIRED_EDIFFS = true;
 
     const bool CMD_LINE_PARAMS = true;
     
