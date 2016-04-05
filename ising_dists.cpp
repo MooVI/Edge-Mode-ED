@@ -148,15 +148,16 @@ int main(int argc, char** argv) {
     NumMethod::RunningStats<mpfr::mpreal> statoverlap, stateigdiff;
 
 
-    const int begin = 12;
-    const int end = 13;
+    const int begin = 10;
+    const int end = 11;
 
     std::string hashlabel = "";
     if (CMD_LINE_PARAMS and argc > 4)
       hashlabel = std::string(argv[4]);
 
     NumMethod::ForLoopParams<mpreal> fparams;
-    NumMethod::EqualSpaceFor couplingsfor;
+    NumMethod::GetXFor<mpreal> recordx;
+    NumMethod::LogFor couplingsfor;
     fparams.start = 0.;
     fparams.end = 1.;
     fparams.numPoints = 100;
@@ -166,7 +167,9 @@ int main(int argc, char** argv) {
     
 
     std::vector<mpfr::mpreal> maxoverlap, eigdiffs, varoverlaps, vareigdiffs;
-    std::vector<mpreal> fs = couplingsfor.get_x(fparams);
+    std::vector<mpreal> fs;
+    couplingsfor.loop(recordx, fparams);
+    fs = recordx.get_x();
 
     auto body = [&](int width, int i) {
 
@@ -308,7 +311,8 @@ int main(int argc, char** argv) {
             return false;
         };
         couplingsfor.loop(couplingsbody, fparams);
-	std::string label = hashlabel + "V_Ising_L_" + to_string(width) + "_f_" + to_string(f);
+	
+	std::string label = hashlabel + "V_Ising_log_L_" + to_string(width) + "_f_" + to_string(f);
         if (WRITE_MEANS) {
             plotter.writeToFile(label + "_meanoverlap", fs, maxoverlap);
             plotter.writeToFile(label + "_meanediff", fs, eigdiffs);
