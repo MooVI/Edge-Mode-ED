@@ -157,7 +157,7 @@ int main(int argc, char** argv) {
 
     NumMethod::ForLoopParams<mpreal> fparams;
     NumMethod::GetXFor<mpreal> recordx;
-    NumMethod::LogFor couplingsfor;
+    NumMethod::EqualSpaceFor couplingsfor;
     fparams.start = 0.;
     fparams.end = 1.;
     fparams.numPoints = 100;
