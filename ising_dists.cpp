@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   main.cpp
  * Author: Jack Kemp
  *
@@ -111,7 +111,7 @@ std::string to_string(mpfr::mpreal value){
 
 
 /*
- * 
+ *
  */
 int main(int argc, char** argv) {
     mpfr::mpreal::set_default_prec(128);
@@ -119,7 +119,7 @@ int main(int argc, char** argv) {
 
     constexpr int maxwidth = 16;
     powersoftwo < maxwidth + 1 > pows2;
-    
+
     const bool WRITE_ENERGIES = false;
     const bool WRITE_OVERLAPS = false;
     const bool WRITE_BULK = false;
@@ -129,7 +129,7 @@ int main(int argc, char** argv) {
     const bool WRITE_PAIRED_EDIFFS = false;
 
     const bool CMD_LINE_PARAMS = true;
-    
+
 
     typedef Eigen::Matrix<mpreal, Eigen::Dynamic, Eigen::Dynamic> Matrixww;
     typedef Eigen::Matrix<mpreal, Eigen::Dynamic, 1> Vectorw;
@@ -141,15 +141,15 @@ int main(int argc, char** argv) {
     const mpreal J3 = 0.0;
     const mpreal J4 = 0.0;
     const mpreal J = 1.0;
-    const mpreal f = 0.05;
+    const mpreal f = 0.10;
     const mpreal V = 0.0;
     const mpreal Js [] = {J3, J4};
 
     NumMethod::RunningStats<mpfr::mpreal> statoverlap, stateigdiff;
 
 
-    const int begin = 10;
-    const int end = 11;
+    const int begin = 12;
+    const int end = 13;
 
     std::string hashlabel = "";
     if (CMD_LINE_PARAMS and argc > 4)
@@ -161,10 +161,10 @@ int main(int argc, char** argv) {
     fparams.start = 0.;
     fparams.end = 1.;
     fparams.numPoints = 100;
-    
+
     if (CMD_LINE_PARAMS)
       fparams = NumMethod::get_for_from_cmd<mpreal>(argv);
-    
+
 
     std::vector<mpfr::mpreal> maxoverlap, eigdiffs, varoverlaps, vareigdiffs;
     std::vector<mpreal> fs;
@@ -189,7 +189,7 @@ int main(int argc, char** argv) {
             sigz2[i] = i % 4 < 2 ? 1 : -1;
         }
 
-        auto couplingsbody = [&](mpreal V, int j) {
+        auto couplingsbody = [&](mpreal J2, int j) {
             HE = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
             HO = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
 
@@ -311,8 +311,8 @@ int main(int argc, char** argv) {
             return false;
         };
         couplingsfor.loop(couplingsbody, fparams);
-	
-	std::string label = hashlabel + "V_Ising_log_L_" + to_string(width) + "_f_" + to_string(f);
+
+	std::string label = hashlabel + "Ising_peak_L_" + to_string(width) + "_f_" + to_string(f);
         if (WRITE_MEANS) {
             plotter.writeToFile(label + "_meanoverlap", fs, maxoverlap);
             plotter.writeToFile(label + "_meanediff", fs, eigdiffs);
@@ -331,10 +331,4 @@ int main(int argc, char** argv) {
     return 0;
 
 }
-#endif 
-
-
-
-
-
-
+#endif
