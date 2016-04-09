@@ -139,8 +139,8 @@ int main(int argc, char** argv) {
     NumMethod::RunningStats<mpreal> statoverlap, stateigdiff;
 
 
-    const int begin = 8;
-    const int end = 15;
+    const int begin = 6;
+    const int end = 17;
 
     std::string hashlabel = "";
     if (CMD_LINE_PARAMS and argc > 4)
@@ -177,7 +177,7 @@ int main(int argc, char** argv) {
             sigz2[i] = i % 4 < 2 ? 1 : -1;
         }
 
-        auto couplingsbody = [&](double J2, int j) {
+        auto couplingsbody = [&](double V, int j) {
             HE = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
             HO = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
 
@@ -210,8 +210,8 @@ int main(int argc, char** argv) {
             auto eigsO = esO.eigenvalues();
             auto evecsE = esE.eigenvectors();
             auto evecsO = esO.eigenvectors();
-            std::string label = "Ising_cumul_L_" + std::to_string(width) + "_f_" + std::to_string(f)
-                    + "_J2_" + std::to_string(J2);
+            std::string label = "V_Ising_cumul_L_" + std::to_string(width) + "_f_" + std::to_string(f)
+                    + "_V_" + std::to_string(V);
 
             std::ofstream outEs;
             if (WRITE_ENERGIES)
