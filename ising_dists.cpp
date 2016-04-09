@@ -132,15 +132,15 @@ int main(int argc, char** argv) {
     const double J3 = 0.0;
     const double J4 = 0.0;
     const double J = 1.0;
-    const double f = 0.05;
+    const double f = 0.6;
     const double V = 0.0;
     const double Js [] = {J3, J4};
 
     NumMethod::RunningStats<mpreal> statoverlap, stateigdiff;
 
 
-    const int begin = 6;
-    const int end = 17;
+    const int begin = 8;
+    const int end = 15;
 
     std::string hashlabel = "";
     if (CMD_LINE_PARAMS and argc > 4)
