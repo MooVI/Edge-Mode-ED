@@ -316,10 +316,14 @@ int main(int argc, char** argv) {
         if (WRITE_MEANS) {
             plotter.writeToFile(label + "_meanoverlap", fs, maxoverlap);
             plotter.writeToFile(label + "_meanediff", fs, eigdiffs);
+	    maxoverlap.clear();
+	    eigdiffs.clear();
         }
 	if (WRITE_VARS){
 	  plotter.writeToFile(label + "_varoverlap", fs, varoverlaps);
 	  plotter.writeToFile(label + "_varediff", fs, vareigdiffs);
+	  varoverlaps.clear();
+	  vareigdiffs.clear();
 	}
         return false;
     };
