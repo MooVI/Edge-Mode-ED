@@ -5,10 +5,10 @@
  * Created on 13 October 2014, 11:54
  */
 
-#if 0
+#if 1
 
 #include<Eigen/Dense>
-//#include<Eigen/unsupported/Eigen/MPRealSupport>
+#include<Eigen/MPRealSupport>
 #include<NumericalMethods/NumericalMethods/Random.h>
 #include<NumericalMethods/NumericalMethods/Statistics.h>
 #include<NumericalMethods/NumericalMethods/SamplingForLoops.h>
@@ -23,6 +23,7 @@
 
 using NumMethod::posmod;
 
+//typedef mpfr::mpreal mpreal;
 typedef double mpreal;
 typedef unsigned long ulong;
 
@@ -46,6 +47,18 @@ public:
         }
     }
 };
+
+
+template<typename T>
+std::string to_string(T value){
+    return std::to_string(value);
+}
+
+template<>
+std::string to_string(mpfr::mpreal value){
+    return std::to_string(value.toDouble());
+}
+
 
 /* The basis is |downs> + |ups> -> MSB not set, |downs> - |highs> -> MSB set */
 
@@ -101,20 +114,23 @@ inline int sigma_z_j_z_m(ulong x, ulong y, ulong j, ulong m, powersoftwo<N> pows
 /*
  * 
  */
-int main() {
-    //mpreal::set_default_prec(128);
+int main(int argc, char** argv) {
+    mpfr::mpreal::set_default_prec(128);
     ScatterPlotter plotter;
 
-    constexpr int maxwidth = 10;
+    constexpr int maxwidth = 16;
     powersoftwo < maxwidth + 1 > pows2;
     
-    const bool WRITE_ENERGIES = true;
-    const bool WRITE_OVERLAPS = true;
+    const bool WRITE_ENERGIES = false;
+    const bool WRITE_OVERLAPS = false;
     const bool WRITE_BULK = false;
     const bool WRITE_MEANS = true;
-    const bool WRITE_MAX_OVERLAPS = true;
-    const bool WRITE_PAIRED_EDIFFS = true;
-    
+    const bool WRITE_VARS = true;
+    const bool WRITE_MAX_OVERLAPS = false;
+    const bool WRITE_PAIRED_EDIFFS = false;
+
+    const bool CMD_LINE_PARAMS = true;
+
 
     typedef Eigen::Matrix<mpreal, Eigen::Dynamic, Eigen::Dynamic> Matrixww;
     typedef Eigen::Matrix<mpreal, Eigen::Dynamic, 1> Vectorw;
@@ -122,25 +138,37 @@ int main() {
     typedef Eigen::Array<mpreal, Eigen::Dynamic, Eigen::Dynamic> Arrayww;
 
     
-    const double Y = 0.0;
-    const double Z = 1.0;
-    const double X = 0.2;
-    const double stag = 0.0;
+    const mpreal Y = 0.0;
+    const mpreal Z = 1.0;
+    const mpreal X = 0.2;
+    const mpreal stag = 0.0;
+    const mpreal stagz = 0.2;
 
-    NumMethod::RunningStats<mpreal> statoverlap, stateigdiff;
+    NumMethod::RunningStats<mpfr::mpreal> statoverlap, stateigdiff;
 
 
-    const int begin = 10;
-    const int end = 11;
+    const int begin = 8;
+    const int end = 15;
+
+    std::string hashlabel = "";
+    if (CMD_LINE_PARAMS and argc > 4)
+      hashlabel = std::string(argv[4]);
 
     NumMethod::ForLoopParams<mpreal> fparams;
+    NumMethod::GetXFor<mpreal> recordx;
     NumMethod::EqualSpaceFor couplingsfor;
     fparams.numPoints = 100;
     fparams.start = 0.0;
     fparams.end = 1.0;
 
-    std::vector<mpreal> maxoverlap, eigdiffs;
-    std::vector<mpreal> fs = couplingsfor.get_x(fparams);
+    if (CMD_LINE_PARAMS)
+      fparams = NumMethod::get_for_from_cmd<mpreal>(argv);
+
+
+    std::vector<mpfr::mpreal> maxoverlap, eigdiffs, varoverlaps, vareigdiffs;
+    std::vector<mpreal> fs;
+    couplingsfor.loop(recordx, fparams);
+    fs = recordx.get_x();
 
     auto body = [&](int width, int i) {
 
@@ -160,7 +188,7 @@ int main() {
             sigz2[i] = i % 4 < 2 ? 1 : -1;
         }
 
-        auto couplingsbody = [&](double Y, int j) {
+        auto couplingsbody = [&](mpreal Y, int j) {
             HE = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
             HO = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
 
@@ -171,11 +199,11 @@ int main() {
                     for (ulong jsite = 0; jsite < width; jsite++) {
                         int sym = 2*(jsite%2) - 1;
                         HE(i, j) += 
-                            - Z * sigma_z_j_z_m(i, j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
+			    - (Z+sym*stagz) * sigma_z_j_z_m(i, j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
                             - (Y+sym*stag)* sigma_y_j_y_m(i, j, jsite, jsite + 1, pows2, width, ignoremask)*(((jsite + 1) < width))
                             - (X+sym*stag) * sigma_x_j_x_m(i, j, jsite, jsite + 1, pows2, width, ignoremask)*((jsite + 1) < width);
                         HO(i, j) += 
-                            - Z * sigma_z_j_z_m(~i, ~j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
+                            - (Z+sym*stagz) * sigma_z_j_z_m(~i, ~j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
                             - (Y+sym*stag) * sigma_y_j_y_m(~i, ~j, jsite, jsite + 1, pows2, width, ignoremask)*(((jsite + 1) < width))
                             - (X+sym*stag) * sigma_x_j_x_m(~i, ~j, jsite, jsite + 1, pows2, width, ignoremask)*((jsite + 1) < width);
                     }
@@ -192,8 +220,8 @@ int main() {
             auto eigsO = esO.eigenvalues();
             auto evecsE = esE.eigenvectors();
             auto evecsO = esO.eigenvectors();
-            std::string label = "XYZ_L_" + std::to_string(width) + "_X_" + std::to_string(X)
-                    + "_Y_" + std::to_string(Y);
+            std::string label = "XYZ_L_" + std::to_string(width) + "_X_" + to_string(X)
+	    + "_Y_" + to_string(Y) + "_stag_" + to_string(stag)+"_stagz_"+to_string(stagz);
 
             std::ofstream outEs;
             if (WRITE_ENERGIES)
@@ -204,7 +232,7 @@ int main() {
                 for (int ispec = 0; ispec < pows2(width - 1); ispec++) {
                     auto spec = evecsE.col(ispec).array();
                     for (int i = 0; i < sigz.size(); i++) {
-                        overlap(i, ispec) += (spec * sigz * evecsO.col(i).array()).sum();
+                        overlap(i, ispec) = (spec * sigz * evecsO.col(i).array()).sum();
                     }
                     std::ofstream outoverlaps;
                     outoverlaps.open((label + "_overlaps_states").c_str(), std::ios::trunc);
@@ -214,6 +242,10 @@ int main() {
                     int maxind;
                     moverlaps[ispec] = overlap.col(ispec).abs().maxCoeff(&maxind);
                     meigdiff[ispec] = eigsE[ispec] - eigsO[maxind];
+		        if (WRITE_VARS or WRITE_MEANS){
+		      statoverlap.Push(moverlaps[ispec]);
+		      stateigdiff.Push(meigdiff[ispec]);
+			}
                     if (WRITE_ENERGIES)
                         outEs << eigsE[ispec] << '\n' << eigsO[ispec] << '\n';
                 }
@@ -222,11 +254,15 @@ int main() {
                 for (int ispec = 0; ispec < pows2(width - 1); ispec++) {
                     auto spec = evecsE.col(ispec).array();
                     for (int i = 0; i < sigz.size(); i++) {
-                        overlap(i) += (spec * sigz * evecsO.col(i).array()).sum();
+                        overlap(i) = (spec * sigz * evecsO.col(i).array()).sum();
                     }
                     int maxind;
                     moverlaps[ispec] = overlap.abs().maxCoeff(&maxind);
                     meigdiff[ispec] = eigsE[ispec] - eigsO[maxind];
+		    if (WRITE_VARS or WRITE_MEANS){
+		      statoverlap.Push(moverlaps[ispec]);
+		      stateigdiff.Push(meigdiff[ispec]);
+		    }
                     if (WRITE_ENERGIES)
                         outEs << eigsE[ispec] << '\n' << eigsO[ispec] << '\n';
                 }
@@ -259,17 +295,31 @@ int main() {
                 }
             }
             if (WRITE_MEANS) {
-                maxoverlap.push_back(moverlaps.mean());
-                eigdiffs.push_back(meigdiff.mean());
+                maxoverlap.push_back(statoverlap.Mean());
+                eigdiffs.push_back(stateigdiff.Mean());
             }
+	    if (WRITE_VARS){
+	      varoverlaps.push_back(statoverlap.Variance());
+	      vareigdiffs.push_back(stateigdiff.Variance());
+	    }
+	    if (WRITE_VARS or WRITE_MEANS){
+	      statoverlap.Clear();
+	      stateigdiff.Clear();
+	    }
             return false;
         };
         couplingsfor.loop(couplingsbody, fparams);
+
+	std::string label = hashlabel + "_XYZ_L_" + to_string(width)
+	+ "_X_" + to_string(X)+ "_stag_" + to_string(stag)+"_stagz_"+to_string(stagz);
         if (WRITE_MEANS) {
-            std::string label = "XYZ_L_" + std::to_string(width) + "_X_" + std::to_string(X);
             plotter.writeToFile(label + "_meanoverlap", fs, maxoverlap);
             plotter.writeToFile(label + "_meanediff", fs, eigdiffs);
         }
+	if (WRITE_VARS){
+	  plotter.writeToFile(label + "_varoverlap", fs, varoverlaps);
+	  plotter.writeToFile(label + "_varediff", fs, vareigdiffs);
+	}
         return false;
     };
 
@@ -280,10 +330,4 @@ int main() {
     return 0;
 
 }
-#endif 
-
-
-
-
-
-
+#endif
