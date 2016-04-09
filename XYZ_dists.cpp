@@ -134,7 +134,8 @@ int main() {
     const int end = 11;
 
     NumMethod::ForLoopParams<mpreal> fparams;
-    NumMethod::EqualSpaceFor couplingsfor;
+    NumMethod::GetXFor<mpreal> recordx;
+    NumMethod::LogFor couplingsfor;
     fparams.numPoints = 100;
     fparams.start = 0.0;
     fparams.end = 1.0;
@@ -269,7 +270,15 @@ int main() {
             std::string label = "XYZ_L_" + std::to_string(width) + "_X_" + std::to_string(X);
             plotter.writeToFile(label + "_meanoverlap", fs, maxoverlap);
             plotter.writeToFile(label + "_meanediff", fs, eigdiffs);
+	    maxoverlap.clear();
+	    eigdiffs.clear();
         }
+	if (WRITE_VARS){
+	  plotter.writeToFile(label + "_varoverlap", fs, varoverlaps);
+	  plotter.writeToFile(label + "_varediff", fs, vareigdiffs);
+	  varoverlaps.clear();
+	  vareigdiffs.clear();
+	}
         return false;
     };
 
