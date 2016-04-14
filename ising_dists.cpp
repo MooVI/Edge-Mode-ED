@@ -5,7 +5,7 @@
  * Created on 13 October 2014, 11:54
  */
 
-#if 0
+#if 1
 
 #include<Eigen/Dense>
 #include<Eigen/MPRealSupport>
@@ -120,13 +120,13 @@ int main(int argc, char** argv) {
     constexpr int maxwidth = 16;
     powersoftwo < maxwidth + 1 > pows2;
 
-    const bool WRITE_ENERGIES = false;
-    const bool WRITE_OVERLAPS = false;
+    const bool WRITE_ENERGIES = true;
+    const bool WRITE_OVERLAPS = true;
     const bool WRITE_BULK = false;
-    const bool WRITE_MEANS = true;
-    const bool WRITE_VARS = true;
-    const bool WRITE_MAX_OVERLAPS = false;
-    const bool WRITE_PAIRED_EDIFFS = false;
+    const bool WRITE_MEANS = false;
+    const bool WRITE_VARS = false;
+    const bool WRITE_MAX_OVERLAPS = true;
+    const bool WRITE_PAIRED_EDIFFS = true;
 
     const bool CMD_LINE_PARAMS = true;
 
@@ -141,15 +141,15 @@ int main(int argc, char** argv) {
     const mpreal J3 = 0.0;
     const mpreal J4 = 0.0;
     const mpreal J = 1.0;
-    const mpreal f = 0.10;
+    const mpreal f = 0.05;
     const mpreal V = 0.0;
     const mpreal Js [] = {J3, J4};
 
     NumMethod::RunningStats<mpfr::mpreal> statoverlap, stateigdiff;
 
 
-    const int begin = 12;
-    const int end = 13;
+    const int begin = 14;
+    const int end = 15;
 
     std::string hashlabel = "";
     if (CMD_LINE_PARAMS and argc > 4)
@@ -222,8 +222,8 @@ int main(int argc, char** argv) {
             auto eigsO = esO.eigenvalues();
             auto evecsE = esE.eigenvectors();
             auto evecsO = esO.eigenvectors();
-            std::string label = "Ising_test_L_" + to_string(width) + "_f_" + to_string(f)
-                    + "_V_" + to_string(V);
+            std::string label = "Ising_L_" + to_string(width) + "_f_" + to_string(f)
+                    + "_J2_" + to_string(J2);
 
             std::ofstream outEs;
             if (WRITE_ENERGIES)
@@ -312,7 +312,7 @@ int main(int argc, char** argv) {
         };
         couplingsfor.loop(couplingsbody, fparams);
 
-	std::string label = hashlabel + "Ising_peak_L_" + to_string(width) + "_f_" + to_string(f);
+	std::string label = hashlabel + "Ising_L_" + to_string(width) + "_f_" + to_string(f);
         if (WRITE_MEANS) {
             plotter.writeToFile(label + "_meanoverlap", fs, maxoverlap);
             plotter.writeToFile(label + "_meanediff", fs, eigdiffs);
