@@ -111,10 +111,15 @@ int main() {
     const bool WRITE_ENERGIES = true;
     const bool WRITE_OVERLAPS = true;
     const bool WRITE_BULK = false;
-    const bool WRITE_MEANS = true;
-    const bool WRITE_MAX_OVERLAPS = true;
-    const bool WRITE_PAIRED_EDIFFS = true;
-    
+    const bool WRITE_MEANS = false;
+    const bool WRITE_VARS = false;
+    const bool WRITE_MAX_OVERLAPS = false;
+    const bool WRITE_PAIRED_EDIFFS = false;
+    const bool WRITE_ALL_DECAY = true;
+    const bool WRITE_PAIRED_DECAY = true;
+
+    const bool CMD_LINE_PARAMS = false;
+
 
     typedef Eigen::Matrix<mpreal, Eigen::Dynamic, Eigen::Dynamic> Matrixww;
     typedef Eigen::Matrix<mpreal, Eigen::Dynamic, 1> Vectorw;
@@ -122,26 +127,50 @@ int main() {
     typedef Eigen::Array<mpreal, Eigen::Dynamic, Eigen::Dynamic> Arrayww;
 
     
-    const double Y = 0.0;
-    const double Z = 1.0;
-    const double X = 0.2;
-    const double stag = 0.0;
+    const mpreal Y = 0.0;
+    const mpreal Z = 1.0;
+    const mpreal X = 0.05;
+    const mpreal stag = 0.0;
+    const mpreal stagz = 0.0;
+
+    NumMethod::RunningStats<mpfr::mpreal> statoverlap, stateigdiff;
 
     NumMethod::RunningStats<mpreal> statoverlap, stateigdiff;
 
+    const int begin = 12;
+    const int end = 13;
 
     const int begin = 10;
     const int end = 11;
 
     NumMethod::ForLoopParams<mpreal> fparams;
     NumMethod::GetXFor<mpreal> recordx;
-    NumMethod::LogFor couplingsfor;
-    fparams.numPoints = 100;
+    NumMethod::EqualSpaceFor couplingsfor;
     fparams.start = 0.0;
     fparams.end = 1.0;
+    fparams.numPoints = 11;
 
-    std::vector<mpreal> maxoverlap, eigdiffs;
-    std::vector<mpreal> fs = couplingsfor.get_x(fparams);
+    if (CMD_LINE_PARAMS)
+      fparams = NumMethod::get_for_from_cmd<mpreal>(argv);
+
+
+    std::vector<mpfr::mpreal> maxoverlap, eigdiffs, varoverlaps, vareigdiffs;
+    std::vector<mpreal> fs;
+    couplingsfor.loop(recordx, fparams);
+    fs = recordx.get_x();
+    recordx.clear();
+
+    NumMethod::LogFor tfor;
+    NumMethod::ForLoopParams<mpreal> tparams;
+    std::vector<mpreal> ts;
+    if (WRITE_ALL_DECAY | WRITE_PAIRED_DECAY) {
+        tparams.start = 0.01;
+        tparams.end = 1e6;
+        tparams.numPoints = 1000;
+        tfor.loop(recordx, tparams);
+        ts = recordx.get_x();
+        recordx.clear();
+    }
 
     auto body = [&](int width, int i) {
 
@@ -200,23 +229,42 @@ int main() {
             if (WRITE_ENERGIES)
                 outEs.open((label + "_energies").c_str(), std::ios::trunc);
 
-            if (WRITE_OVERLAPS) {
+            if (WRITE_OVERLAPS or WRITE_ALL_DECAY) {
                 Arrayww overlap = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
                 for (int ispec = 0; ispec < pows2(width - 1); ispec++) {
                     auto spec = evecsE.col(ispec).array();
                     for (int i = 0; i < sigz.size(); i++) {
                         overlap(i, ispec) += (spec * sigz * evecsO.col(i).array()).sum();
                     }
-                    std::ofstream outoverlaps;
-                    outoverlaps.open((label + "_overlaps_states").c_str(), std::ios::trunc);
-                    outoverlaps << overlap;
-                    outoverlaps.flush();
-                    outoverlaps.close();
+                    
                     int maxind;
                     moverlaps[ispec] = overlap.col(ispec).abs().maxCoeff(&maxind);
                     meigdiff[ispec] = eigsE[ispec] - eigsO[maxind];
                     if (WRITE_ENERGIES)
                         outEs << eigsE[ispec] << '\n' << eigsO[ispec] << '\n';
+                }
+                if (WRITE_OVERLAPS){
+                std::ofstream outoverlaps;
+                outoverlaps.open((label + "_overlaps_states").c_str(), std::ios::trunc);
+                outoverlaps << overlap;
+                outoverlaps.flush();
+                outoverlaps.close();
+                }
+                if (WRITE_ALL_DECAY){
+                    Arrayw toverlaps (tparams.numPoints);
+                    overlap = overlap.array().square();
+                    Arrayww alleigdiff(pows2(width-1), pows2(width-1));
+                    for (ulong i = 0; i < pows2(width - 1); i++) {
+                        for (ulong j = 0; j < pows2(width - 1); j++) {
+                            alleigdiff(i, j) = eigsE[j] - eigsO[i];
+                        }
+                    }
+                    auto tfunc = [&](mpreal t, int j) {
+                        toverlaps[j] = ((overlap.array()*alleigdiff.unaryExpr([ = ](mpreal x){return cos(x * t);})).sum()/(mpreal) pows2(width-1));
+                        return false;
+                    };
+                    tfor.loop(tfunc, tparams);
+                    plotter.writeToFile(label+"_long_decay", ts, toverlaps);
                 }
             } else {
                 Arrayw overlap = Vectorw::Zero(pows2(width - 1));
@@ -240,6 +288,16 @@ int main() {
                 plotter.writeToFile(label + "_maxoverlaps", moverlaps);
             if (WRITE_PAIRED_EDIFFS)
                 plotter.writeToFile(label + "_pairedeigdiffs", meigdiff);
+            if (WRITE_PAIRED_DECAY) {
+                Arrayw toverlaps(tparams.numPoints);
+                moverlaps = moverlaps.square();
+                auto tfunc = [&](mpreal t, int j) {
+                    toverlaps[j] = (moverlaps * meigdiff.unaryExpr([ = ](mpreal x){return cos(x * t);})).mean();
+                    return false;
+                };
+                tfor.loop(tfunc, tparams);
+                plotter.writeToFile(label + "_paired_decay", ts, toverlaps);
+            }
             if (WRITE_BULK) {
                 Arrayww overlap = Matrixww::Zero(pows2(width - 1), width);
                 const int bulkspec = pows2(width - 2);
@@ -266,6 +324,9 @@ int main() {
             return false;
         };
         couplingsfor.loop(couplingsbody, fparams);
+
+	std::string label = hashlabel + "XYZ_L_" + to_string(width)
+	+ "_X_" + to_string(X)+ "_stag_" + to_string(stag)+"_stagz_"+to_string(stagz);
         if (WRITE_MEANS) {
             std::string label = "XYZ_L_" + std::to_string(width) + "_X_" + std::to_string(X);
             plotter.writeToFile(label + "_meanoverlap", fs, maxoverlap);
