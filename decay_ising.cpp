@@ -104,7 +104,7 @@ int main() {
     const double r = 0.05;
     const double J2 = 0.00;
     const double J = 1.0;
-    const double f = 0.05;
+    const double f = 0.4;
     const double V = 0.0;
 
     NumMethod::RunningStats<mpreal> statoverlap, stateigdiff;
@@ -137,13 +137,13 @@ int main() {
     }
 
     NumMethod::ForLoopParams<mpreal> fparams;
-    fparams.numPoints = 2;
-    fparams.start = 0.6;
-    fparams.end = 0.95;
+    fparams.numPoints = 4;
+    fparams.start = 0.2;
+    fparams.end = 0.8;
     std::vector<std::vector<mpreal>> maxoverlap (fparams.numPoints), eigdiffs (fparams.numPoints), times(fparams.numPoints);
     Arrayw moverlaps (pows2(width - 1)), meigdiff(pows2(width - 1));
     std::vector<mpreal> fs;
-    auto body = [&](mpreal J2, int i) {
+    auto body = [&](mpreal V, int i) {
         HE = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
         HO = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
 
@@ -194,7 +194,7 @@ int main() {
         }
         NumMethod::LogFor logfor;
         NumMethod::ForLoopParams<mpreal> logparams;
-        logparams.start = 1; logparams.end = 1000000000; logparams.numPoints = 10000;
+        logparams.start = 0.01; logparams.end = 1e6; logparams.numPoints = 1000;
         //for (mpreal t = 0; t < 1000000000; t += 100000) {
         auto tfunc = [&](mpreal t, int j){
            maxoverlap[i].push_back((moverlaps*meigdiff.unaryExpr([=](mpreal x) {return cos(x*t);})).mean());
@@ -206,7 +206,7 @@ int main() {
             //eigdiffs[i].push_back(stateigdiff.Mean());
             statoverlap.Clear();
             //stateigdiff.Clear();
-        fs.push_back(J2);
+        fs.push_back(V);
         //PlotterData pd;
         //pd.style = "l";
         //plotter.plot2(eigsE, overlap, pd);
@@ -221,12 +221,12 @@ int main() {
 
     PlotterData pd, pd2;
     pd.style = "l";
-    pd.input = "Ising_test_" + std::to_string(fs[0])+ "_decay_" + std::to_string(width);
-    //plotter.plot2(times[0], maxoverlap[0], pd);
-    plotter.plot2withAnalytic(times[0], maxoverlap[0], [](mpreal x){return exp(-x*x*1.4e-15);}, 100, pd);
-    pd2.input = "Ising_test_" + std::to_string(fs[1])+ "_decay_" + std::to_string(width);
-    //plotter.plot2(times[1], maxoverlap[1], pd2);
-    plotter.plot2withAnalytic(times[1], maxoverlap[1], [](mpreal x){return (0.538-0.36)*exp(-x*x*2.8e-6)+0.36;}, 1000, pd2);
+    pd.input = "V_Ising_test_f_" +std::to_string(f)+"_V_"+ std::to_string(fs[0])+ "_decay_" + std::to_string(width);
+    plotter.plot2(times[0], maxoverlap[0], pd);
+    //plotter.plot2withAnalytic(times[0], maxoverlap[0], [](mpreal x){return exp(-x*x*1.4e-15);}, 100, pd);
+    pd2.input = "V_Ising_test_f_" +std::to_string(f)+"_V_" + std::to_string(fs[1])+ "_decay_" + std::to_string(width);
+    plotter.plot2(times[1], maxoverlap[1], pd2);
+    //plotter.plot2withAnalytic(times[1], maxoverlap[1], [](mpreal x){return (0.538-0.36)*exp(-x*x*2.8e-6)+0.36;}, 1000, pd2);
     plotter.wait();
     return 0;
 
