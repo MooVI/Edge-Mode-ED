@@ -26,6 +26,8 @@
       <itemPath>ising_dists.cpp</itemPath>
       <itemPath>ising_dists_bulk.cpp</itemPath>
       <itemPath>ising_extra_terms_dists.cpp</itemPath>
+      <itemPath>ising_kron_dists.cpp</itemPath>
+      <itemPath>kronecker_product.cpp</itemPath>
       <itemPath>length_XYZ.cpp</itemPath>
       <itemPath>length_ising.cpp</itemPath>
       <itemPath>parafermion.cpp</itemPath>
@@ -96,6 +98,10 @@
       </item>
       <item path="ising_extra_terms_dists.cpp" ex="false" tool="1" flavor2="0">
       </item>
+      <item path="ising_kron_dists.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="kronecker_product.cpp" ex="false" tool="1" flavor2="0">
+      </item>
       <item path="length_XYZ.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="length_ising.cpp" ex="false" tool="1" flavor2="0">
@@ -138,10 +144,14 @@
           <developmentMode>5</developmentMode>
         </asmTool>
         <linkerTool>
+          <linkerAddLib>
+            <pElem>~/lib</pElem>
+          </linkerAddLib>
           <linkerLibItems>
             <linkerLibFileItem>../../Plotting/Plotter/dist/Release/GNU-Linux-x86/libplotter.a</linkerLibFileItem>
             <linkerLibFileItem>../../NumericalMethods/NumericalMethods/dist/Release/GNU-Linux-x86/libnumericalmethods.a</linkerLibFileItem>
           </linkerLibItems>
+          <commandLine>-lgmp -lmpfr -lyaml-cpp</commandLine>
         </linkerTool>
       </compileType>
       <item path="XYZ_dists.cpp" ex="false" tool="1" flavor2="0">
@@ -171,6 +181,10 @@
       <item path="ising_dists_bulk.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="ising_extra_terms_dists.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="ising_kron_dists.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="kronecker_product.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="length_XYZ.cpp" ex="false" tool="1" flavor2="0">
       </item>

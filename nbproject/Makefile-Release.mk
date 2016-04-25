@@ -49,6 +49,8 @@ OBJECTFILES= \
 	${OBJECTDIR}/ising_dists.o \
 	${OBJECTDIR}/ising_dists_bulk.o \
 	${OBJECTDIR}/ising_extra_terms_dists.o \
+	${OBJECTDIR}/ising_kron_dists.o \
+	${OBJECTDIR}/kronecker_product.o \
 	${OBJECTDIR}/length_XYZ.o \
 	${OBJECTDIR}/length_ising.o \
 	${OBJECTDIR}/parafermion.o \
@@ -72,7 +74,7 @@ FFLAGS=
 ASFLAGS=
 
 # Link Libraries and Options
-LDLIBSOPTIONS=../../Plotting/Plotter/dist/Release/GNU-Linux-x86/libplotter.a ../../NumericalMethods/NumericalMethods/dist/Release/GNU-Linux-x86/libnumericalmethods.a -lmpfr -lgmp
+LDLIBSOPTIONS=-L~/lib ../../Plotting/Plotter/dist/Release/GNU-Linux-x86/libplotter.a ../../NumericalMethods/NumericalMethods/dist/Release/GNU-Linux-x86/libnumericalmethods.a
 
 # Build Targets
 .build-conf: ${BUILD_SUBPROJECTS}
@@ -84,7 +86,7 @@ ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/tp11_1: ../../NumericalMethods/Numeri
 
 ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/tp11_1: ${OBJECTFILES}
 	${MKDIR} -p ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}
-	${LINK.cc} -o ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/tp11_1 ${OBJECTFILES} ${LDLIBSOPTIONS}
+	${LINK.cc} -o ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/tp11_1 ${OBJECTFILES} ${LDLIBSOPTIONS} -lgmp -lmpfr -lyaml-cpp
 
 ${OBJECTDIR}/XYZ_dists.o: XYZ_dists.cpp 
 	${MKDIR} -p ${OBJECTDIR}
@@ -155,6 +157,16 @@ ${OBJECTDIR}/ising_extra_terms_dists.o: ising_extra_terms_dists.cpp
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
 	$(COMPILE.cc) -I../.. -I.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/ising_extra_terms_dists.o ising_extra_terms_dists.cpp
+
+${OBJECTDIR}/ising_kron_dists.o: ising_kron_dists.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} "$@.d"
+	$(COMPILE.cc) -I../.. -I.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/ising_kron_dists.o ising_kron_dists.cpp
+
+${OBJECTDIR}/kronecker_product.o: kronecker_product.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} "$@.d"
+	$(COMPILE.cc) -I../.. -I.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/kronecker_product.o kronecker_product.cpp
 
 ${OBJECTDIR}/length_XYZ.o: length_XYZ.cpp 
 	${MKDIR} -p ${OBJECTDIR}

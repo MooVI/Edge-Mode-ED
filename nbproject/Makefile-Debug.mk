@@ -49,6 +49,8 @@ OBJECTFILES= \
 	${OBJECTDIR}/ising_dists.o \
 	${OBJECTDIR}/ising_dists_bulk.o \
 	${OBJECTDIR}/ising_extra_terms_dists.o \
+	${OBJECTDIR}/ising_kron_dists.o \
+	${OBJECTDIR}/kronecker_product.o \
 	${OBJECTDIR}/length_XYZ.o \
 	${OBJECTDIR}/length_ising.o \
 	${OBJECTDIR}/parafermion.o \
@@ -155,6 +157,16 @@ ${OBJECTDIR}/ising_extra_terms_dists.o: ising_extra_terms_dists.cpp
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
 	$(COMPILE.cc) -g -I../.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/ising_extra_terms_dists.o ising_extra_terms_dists.cpp
+
+${OBJECTDIR}/ising_kron_dists.o: ising_kron_dists.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} "$@.d"
+	$(COMPILE.cc) -g -I../.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/ising_kron_dists.o ising_kron_dists.cpp
+
+${OBJECTDIR}/kronecker_product.o: kronecker_product.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} "$@.d"
+	$(COMPILE.cc) -g -I../.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/kronecker_product.o kronecker_product.cpp
 
 ${OBJECTDIR}/length_XYZ.o: length_XYZ.cpp 
 	${MKDIR} -p ${OBJECTDIR}
