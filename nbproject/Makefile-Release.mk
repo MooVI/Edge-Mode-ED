@@ -91,117 +91,117 @@ ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/tp11_1: ${OBJECTFILES}
 ${OBJECTDIR}/XYZ_dists.o: XYZ_dists.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -I../.. -I.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/XYZ_dists.o XYZ_dists.cpp
+	$(COMPILE.cc) -I../.. -I.. -I~/lib -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/XYZ_dists.o XYZ_dists.cpp
 
 ${OBJECTDIR}/XYZ_mean.o: XYZ_mean.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -I../.. -I.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/XYZ_mean.o XYZ_mean.cpp
+	$(COMPILE.cc) -I../.. -I.. -I~/lib -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/XYZ_mean.o XYZ_mean.cpp
 
 ${OBJECTDIR}/XYZ_stagger.o: XYZ_stagger.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -I../.. -I.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/XYZ_stagger.o XYZ_stagger.cpp
+	$(COMPILE.cc) -I../.. -I.. -I~/lib -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/XYZ_stagger.o XYZ_stagger.cpp
 
 ${OBJECTDIR}/decay_XYZ.o: decay_XYZ.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -I../.. -I.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/decay_XYZ.o decay_XYZ.cpp
+	$(COMPILE.cc) -I../.. -I.. -I~/lib -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/decay_XYZ.o decay_XYZ.cpp
 
 ${OBJECTDIR}/decay_ising.o: decay_ising.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -I../.. -I.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/decay_ising.o decay_ising.cpp
+	$(COMPILE.cc) -I../.. -I.. -I~/lib -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/decay_ising.o decay_ising.cpp
 
 ${OBJECTDIR}/exact_diag.o: exact_diag.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -I../.. -I.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/exact_diag.o exact_diag.cpp
+	$(COMPILE.cc) -I../.. -I.. -I~/lib -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/exact_diag.o exact_diag.cpp
 
 ${OBJECTDIR}/exact_diag_basis.o: exact_diag_basis.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -I../.. -I.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/exact_diag_basis.o exact_diag_basis.cpp
+	$(COMPILE.cc) -I../.. -I.. -I~/lib -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/exact_diag_basis.o exact_diag_basis.cpp
 
 ${OBJECTDIR}/exact_diag_basis_J2.o: exact_diag_basis_J2.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -I../.. -I.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/exact_diag_basis_J2.o exact_diag_basis_J2.cpp
+	$(COMPILE.cc) -I../.. -I.. -I~/lib -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/exact_diag_basis_J2.o exact_diag_basis_J2.cpp
 
 ${OBJECTDIR}/exact_diag_basis_f.o: exact_diag_basis_f.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -I../.. -I.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/exact_diag_basis_f.o exact_diag_basis_f.cpp
+	$(COMPILE.cc) -I../.. -I.. -I~/lib -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/exact_diag_basis_f.o exact_diag_basis_f.cpp
 
 ${OBJECTDIR}/exact_diag_basis_xyz.o: exact_diag_basis_xyz.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -I../.. -I.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/exact_diag_basis_xyz.o exact_diag_basis_xyz.cpp
+	$(COMPILE.cc) -I../.. -I.. -I~/lib -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/exact_diag_basis_xyz.o exact_diag_basis_xyz.cpp
 
 ${OBJECTDIR}/exact_diag_mean.o: exact_diag_mean.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -I../.. -I.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/exact_diag_mean.o exact_diag_mean.cpp
+	$(COMPILE.cc) -I../.. -I.. -I~/lib -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/exact_diag_mean.o exact_diag_mean.cpp
 
 ${OBJECTDIR}/ising_dists.o: ising_dists.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -I../.. -I.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/ising_dists.o ising_dists.cpp
+	$(COMPILE.cc) -I../.. -I.. -I~/lib -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/ising_dists.o ising_dists.cpp
 
 ${OBJECTDIR}/ising_dists_bulk.o: ising_dists_bulk.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -I../.. -I.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/ising_dists_bulk.o ising_dists_bulk.cpp
+	$(COMPILE.cc) -I../.. -I.. -I~/lib -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/ising_dists_bulk.o ising_dists_bulk.cpp
 
 ${OBJECTDIR}/ising_extra_terms_dists.o: ising_extra_terms_dists.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -I../.. -I.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/ising_extra_terms_dists.o ising_extra_terms_dists.cpp
+	$(COMPILE.cc) -I../.. -I.. -I~/lib -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/ising_extra_terms_dists.o ising_extra_terms_dists.cpp
 
 ${OBJECTDIR}/ising_kron_dists.o: ising_kron_dists.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -I../.. -I.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/ising_kron_dists.o ising_kron_dists.cpp
+	$(COMPILE.cc) -I../.. -I.. -I~/lib -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/ising_kron_dists.o ising_kron_dists.cpp
 
 ${OBJECTDIR}/kronecker_product.o: kronecker_product.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -I../.. -I.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/kronecker_product.o kronecker_product.cpp
+	$(COMPILE.cc) -I../.. -I.. -I~/lib -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/kronecker_product.o kronecker_product.cpp
 
 ${OBJECTDIR}/length_XYZ.o: length_XYZ.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -I../.. -I.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/length_XYZ.o length_XYZ.cpp
+	$(COMPILE.cc) -I../.. -I.. -I~/lib -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/length_XYZ.o length_XYZ.cpp
 
 ${OBJECTDIR}/length_ising.o: length_ising.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -I../.. -I.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/length_ising.o length_ising.cpp
+	$(COMPILE.cc) -I../.. -I.. -I~/lib -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/length_ising.o length_ising.cpp
 
 ${OBJECTDIR}/parafermion.o: parafermion.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -I../.. -I.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/parafermion.o parafermion.cpp
+	$(COMPILE.cc) -I../.. -I.. -I~/lib -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/parafermion.o parafermion.cpp
 
 ${OBJECTDIR}/parafermion_basis.o: parafermion_basis.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -I../.. -I.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/parafermion_basis.o parafermion_basis.cpp
+	$(COMPILE.cc) -I../.. -I.. -I~/lib -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/parafermion_basis.o parafermion_basis.cpp
 
 ${OBJECTDIR}/parafermion_mean.o: parafermion_mean.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -I../.. -I.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/parafermion_mean.o parafermion_mean.cpp
+	$(COMPILE.cc) -I../.. -I.. -I~/lib -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/parafermion_mean.o parafermion_mean.cpp
 
 ${OBJECTDIR}/parafermion_overlap.o: parafermion_overlap.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -I../.. -I.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/parafermion_overlap.o parafermion_overlap.cpp
+	$(COMPILE.cc) -I../.. -I.. -I~/lib -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/parafermion_overlap.o parafermion_overlap.cpp
 
 ${OBJECTDIR}/timedecay_ising.o: timedecay_ising.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -I../.. -I.. -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/timedecay_ising.o timedecay_ising.cpp
+	$(COMPILE.cc) -I../.. -I.. -I~/lib -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/timedecay_ising.o timedecay_ising.cpp
 
 # Subprojects
 .build-subprojects:

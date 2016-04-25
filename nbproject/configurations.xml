@@ -134,6 +134,7 @@
           <incDir>
             <pElem>../..</pElem>
             <pElem>..</pElem>
+            <pElem>~/lib</pElem>
           </incDir>
           <commandLine>-lmpfr -lgmp -march=native -Ofast -pthread</commandLine>
         </ccTool>
