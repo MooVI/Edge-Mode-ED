@@ -134,7 +134,7 @@
           <incDir>
             <pElem>../..</pElem>
             <pElem>..</pElem>
-            <pElem>~/lib</pElem>
+            <pElem>$$HOME/include</pElem>
           </incDir>
           <commandLine>-lmpfr -lgmp -march=native -Ofast -pthread</commandLine>
         </ccTool>
@@ -146,7 +146,7 @@
         </asmTool>
         <linkerTool>
           <linkerAddLib>
-            <pElem>~/lib</pElem>
+            <pElem>$$HOME/lib</pElem>
           </linkerAddLib>
           <linkerLibItems>
             <linkerLibFileItem>../../Plotting/Plotter/dist/Release/GNU-Linux-x86/libplotter.a</linkerLibFileItem>
