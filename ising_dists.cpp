@@ -101,6 +101,18 @@ inline int sigma_z_p_x_j_z_m(ulong x, ulong y, ulong p, ulong j, ulong m, powers
             *(2 * ((x & pows(m)) >> m) - 1);
 }
 
+
+template<typename T>
+std::string to_string(T value){
+    return std::to_string(value);
+}
+
+template<>
+std::string to_string(mpfr::mpreal value){
+    return std::to_string(value.toDouble());
+}
+
+
 /*
  * 
  */
@@ -111,17 +123,17 @@ int main(int argc, char** argv) {
     constexpr int maxwidth = 16;
     powersoftwo < maxwidth + 1 > pows2;
     
-    const bool WRITE_ENERGIES = true;
+    const bool WRITE_ENERGIES = false;
     const bool WRITE_OVERLAPS = false;
     const bool WRITE_BULK = false;
     const bool WRITE_MEANS = false;
-    const bool WRITE_VARS = false;
-    const bool WRITE_MAX_OVERLAPS = false;
+    const bool WRITE_VARS = true;
+    const bool WRITE_MAX_OVERLAPS = true;
     const bool WRITE_PAIRED_EDIFFS = false;
-    const bool WRITE_ALL_DECAY = true;
-    const bool WRITE_PAIRED_DECAY = true;
+    const bool WRITE_ALL_DECAY = false;
+    const bool WRITE_PAIRED_DECAY = false;
 
-    const bool CMD_LINE_PARAMS = false;
+    const bool CMD_LINE_PARAMS = true;
 
 
     typedef Eigen::Matrix<mpreal, Eigen::Dynamic, Eigen::Dynamic> Matrixww;
@@ -134,25 +146,26 @@ int main(int argc, char** argv) {
     const mpreal J3 = 0.0;
     const mpreal J4 = 0.0;
     const mpreal J = 1.0;
-    const mpreal f = 0.4;
-    const mpreal V = 0.0;
+    const mpreal f = 0.0;
+    const mpreal V = 0.05;
     const mpreal Js [] = {J3, J4};
 
     NumMethod::RunningStats<mpreal> statoverlap, stateigdiff;
 
 
     const int begin = 8;
-    const int end = 15;
+    const int end = 13;
 
     std::string hashlabel = "";
     if (CMD_LINE_PARAMS and argc > 4)
       hashlabel = std::string(argv[4]);
 
     NumMethod::ForLoopParams<mpreal> fparams;
+    NumMethod::GetXFor<mpreal> recordx;
     NumMethod::EqualSpaceFor couplingsfor;
-    fparams.start = 0.1;
-    fparams.end = 1.1;
-    fparams.numPoints = 6;
+    fparams.start = 0.0;
+    fparams.end = 2.0;
+    fparams.numPoints = 10;
 
     if (CMD_LINE_PARAMS)
       fparams = NumMethod::get_for_from_cmd<mpreal>(argv);
@@ -170,8 +183,8 @@ int main(int argc, char** argv) {
     std::vector<mpreal> ts;
     if (WRITE_ALL_DECAY | WRITE_PAIRED_DECAY) {
         tparams.start = 0.01;
-        tparams.end = 1e6;
-        tparams.numPoints = 1000;
+        tparams.end = 1e14;
+        tparams.numPoints = 2000;
         tfor.loop(recordx, tparams);
         ts = recordx.get_x();
         recordx.clear();
@@ -195,7 +208,7 @@ int main(int argc, char** argv) {
             sigz2[i] = i % 4 < 2 ? 1 : -1;
         }
 
-        auto couplingsbody = [&](mpreal f, int j) {
+        auto couplingsbody = [&](mpreal J2, int j) {
             HE = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
             HO = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
 
@@ -229,7 +242,7 @@ int main(int argc, char** argv) {
             auto evecsE = esE.eigenvectors();
             auto evecsO = esO.eigenvectors();
             std::string label = "Ising_L_" + to_string(width) + "_f_" + to_string(f)
-                    + "_V_" + to_string(V);
+	    + "_J2_"+to_string(J2)+"_V_" + to_string(V);
 
             std::ofstream outEs;
             if (WRITE_ENERGIES)
@@ -347,7 +360,7 @@ int main(int argc, char** argv) {
             return false;
         };
         couplingsfor.loop(couplingsbody, fparams);
-	std::string label = hashlabel + "Ising_L_" + std::to_string(width) + "_f_" + std::to_string(f);
+	std::string label = hashlabel + "Ising_L_" + std::to_string(width) + "_f_" + std::to_string(f) + "_V_" + std::to_string(V);
         if (WRITE_MEANS) {
             plotter.writeToFile(label + "_meanoverlap", fs, maxoverlap);
             plotter.writeToFile(label + "_meanediff", fs, eigdiffs);
