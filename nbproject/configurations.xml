@@ -27,7 +27,7 @@
       <itemPath>ising_dists_bulk.cpp</itemPath>
       <itemPath>ising_extra_terms_dists.cpp</itemPath>
       <itemPath>ising_kron_dists.cpp</itemPath>
-      <itemPath>/home/qfeuille/Storage/Programming/Oxford/TP11_1/ising_kron_general.cpp</itemPath>
+      <itemPath>ising_kron_general.cpp</itemPath>
       <itemPath>kronecker_product.cpp</itemPath>
       <itemPath>length_XYZ.cpp</itemPath>
       <itemPath>length_ising.cpp</itemPath>
