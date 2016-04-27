@@ -5,9 +5,11 @@
  * Created on 13 October 2014, 11:54
  */
 
-#if 0
+#if 1
+
 
 #include<Eigen/Dense>
+#include<Eigen/Sparse>
 #include<Eigen/MPRealSupport>
 #include<NumericalMethods/NumericalMethods/Random.h>
 #include<NumericalMethods/NumericalMethods/Statistics.h>
@@ -20,12 +22,51 @@
 #include<chrono>
 #include<functional>
 #include<string>
+#include<yaml-cpp/yaml.h>
+
+
+
 
 using NumMethod::posmod;
 
 //typedef mpfr::mpreal mpreal;
 typedef double mpreal;
 typedef unsigned long ulong;
+typedef std::vector<std::vector<mpreal> > vvmpreal;
+
+
+#include"test_general.h"
+
+typedef Eigen::Matrix<mpreal, Eigen::Dynamic, Eigen::Dynamic> Matrixww;
+typedef Eigen::SparseMatrix<mpreal> SparseMatrixww;
+typedef Eigen::Triplet<mpreal> Triplet;
+typedef Eigen::Matrix<mpreal, Eigen::Dynamic, 1> Vectorw;
+typedef Eigen::Array<mpreal, Eigen::Dynamic, 1> Arrayw;
+typedef Eigen::Array<mpreal, Eigen::Dynamic, Eigen::Dynamic> Arrayww;
+
+
+template<class C, class T>
+auto contains(const C& v, const T& x)
+-> decltype(end(v), true) {
+    return end(v) != std::find(begin(v), end(v), x);
+}
+
+
+//namespace YAML {
+//template<>
+//struct convert<vvmpreal>  {
+//  static bool decode(const Node& node, vvmpreal& rhs) {
+//    if(!node.IsSequence()) {
+//      return false;
+//    }
+//    for (int i=0; i< node.size(); i++){
+//        rhs.push_back(node[i].as<std::vector<mpreal> >());
+//  }
+//    return true;
+//  }
+//};
+//}
+
 
 template <int N>
 class powersoftwo {
@@ -108,7 +149,120 @@ std::string to_string(mpfr::mpreal value){
     return std::to_string(value.toDouble());
 }
 
+class Poly{
+    std::vector<mpreal> coeff; std::vector< std::vector<mpreal> > pows;
+public:
+    template<typename B, typename C>
+    Poly(const B& coeff, const C& pows){
+        for (int i = 0; i < coeff.size(); i++){
+          this->coeff.push_back((mpreal) coeff[i]);  
+        } 
+        for (int i = 0; i < pows.size(); i++) {
+            std::vector<mpreal> temp(pows[i].size());
+            for (int j = 0; j < pows[i].size(); j++)
+                temp[j] = pows[i][j];
+            this->pows.push_back(temp);
+        }
+    }
+    
+    template<typename C>
+    mpreal operator() (const C& args) {
+        mpreal ret = 0;
+        for (int j = 0; j < coeff.size(); j++) {
+            mpreal temp = this->coeff[j];
+            for (int i = 0; i < pows[j].size(); i++)
+                temp *= pow(args[i], pows[j][i]);
+            ret += temp;
+        }
+        return ret;
+    }
+};
 
+
+class edge_mode_term{
+    std::vector<int> xpos, zpos;
+    std::function<mpreal (std::vector<mpreal>)> coeff;
+public:
+    template<typename B, typename D, typename E>
+    edge_mode_term(const B& coeff, const D& xpos, const E& zpos): coeff(coeff){
+        
+        for (int i = 0; i< xpos.size(); i++){
+          this->xpos.push_back(xpos[i]);  
+        }
+        for (int i = 0; i< zpos.size(); i++){
+          this->zpos.push_back(zpos[i]);  
+        }
+        
+    }
+    
+    template<typename C, int N>
+    SparseMatrixww operator () (const C& args,  const int& width, powersoftwo<N> pows2);
+    
+};
+
+template <typename C, int N>
+SparseMatrixww edge_mode_term::operator ()(const C& args,
+                                   const int& width, powersoftwo<N> pows2) {
+    std::vector<Triplet> result(pows2(width - 1));
+    SparseMatrixww mat(pows2(width - 1), pows2(width - 1));
+
+    bool z = contains(this->zpos, 0);
+    bool x = contains(this->xpos, 0);
+    if (x and z) {
+        result [0] = Triplet(0, 1, -1);
+        result [1] = Triplet(1, 0, 1);
+    } else if (z) {
+        result [0] = Triplet(0, 0, -1);
+        result [1] = Triplet(1, 1, 1);
+    } else if (x) {
+        result [0] = Triplet(0, 1, 1);
+        result [1] = Triplet(1, 0, 1);
+    } else {
+        result [0] = Triplet(0, 0, 1);
+        result [1] = Triplet(1, 1, 1);
+    }
+    for (int i = 1; i < width - 1; i++) {
+        bool z = contains(this->zpos, i);
+        bool x = contains(this->xpos, i);
+        if (x and z) {
+            for (int j = 0; j < pows2(i); j++) {
+                result[j] = Triplet(result[j].row() + pows2(i), result[j].col(), result[j].value());
+                result[j + pows2(i)] = Triplet(result[j].row() - pows2(i), result[j].col() + pows2(i), -result[j].value());
+            }
+        } else if (z) {
+            for (int j = 0; j < pows2(i); j++) {
+                result[j] = Triplet(result[j].row(), result[j].col(), -result[j].value());
+                result[j + pows2(i)] = Triplet(result[j].row() + pows2(i), result[j].col() + pows2(i), -result[j].value());
+            }
+        } else if (x) {
+            for (int j = 0; j < pows2(i); j++) {
+                result[j] = Triplet(result[j].row() + pows2(i), result[j].col(), result[j].value());
+                result[j + pows2(i)] = Triplet(result[j].row() - pows2(i), result[j].col() + pows2(i), result[j].value());
+            }
+        } else {
+            for (int j = 0; j < pows2(i); j++) {
+                result[j + pows2(i)] = Triplet(result[j].row() + pows2(i), result[j].col() + pows2(i), result[j].value());
+            }
+        }
+    }
+    z = contains(this->zpos, width - 1);
+    x = contains(this->xpos, width - 1);
+    if (x and z) {
+        for (int j = 0; j < result.size(); j++) {
+            result[j] = Triplet(pows2(width - 1) - result[j].row() - 1, result[j].col(), -result[j].value());
+        }
+    } else if (z) {
+        for (int j = 0; j < result.size(); j++) {
+            result[j] = Triplet(result[j].row(), result[j].col(), -result[j].value());
+        }
+    } else if (x) {
+        for (int j = 0; j < result.size(); j++) {
+            result[j] = Triplet(pows2(width - 1) - result[j].row() - 1, result[j].col(), -result[j].value());
+        }
+    }
+    mat.setFromTriplets(result.begin(), result.end());
+    return this->coeff(args)*mat;
+}
 
 /*
  *
@@ -116,43 +270,49 @@ std::string to_string(mpfr::mpreal value){
 int main(int argc, char** argv) {
     mpfr::mpreal::set_default_prec(128);
     ScatterPlotter plotter;
-
+    
     constexpr int maxwidth = 16;
     powersoftwo < maxwidth + 1 > pows2;
 
-    const bool WRITE_ENERGIES = true;
-    const bool WRITE_OVERLAPS = true;
+    const bool WRITE_ENERGIES = false;
+    const bool WRITE_OVERLAPS = false;
     const bool WRITE_BULK = false;
-    const bool WRITE_MEANS = false;
-    const bool WRITE_VARS = false;
+    const bool WRITE_MEANS = true;
+    const bool WRITE_VARS = true;
     const bool WRITE_MAX_OVERLAPS = false;
     const bool WRITE_PAIRED_EDIFFS = false;
-    const bool WRITE_ALL_DECAY = true;
-    const bool WRITE_PAIRED_DECAY = true;
+    const bool WRITE_ALL_DECAY = false;
+    const bool WRITE_PAIRED_DECAY = false;
 
     const bool CMD_LINE_PARAMS = false;
 
-
-    typedef Eigen::Matrix<mpreal, Eigen::Dynamic, Eigen::Dynamic> Matrixww;
-    typedef Eigen::Matrix<mpreal, Eigen::Dynamic, 1> Vectorw;
-    typedef Eigen::Array<mpreal, Eigen::Dynamic, 1> Arrayw;
-    typedef Eigen::Array<mpreal, Eigen::Dynamic, Eigen::Dynamic> Arrayww;
 
     const mpreal r = 0.05;
     const mpreal J2 = 0.00;
     const mpreal J3 = 0.0;
     const mpreal J4 = 0.0;
     const mpreal J = 1.0;
-    const mpreal f = 0.4;
+    const mpreal f = 0.05;
     const mpreal V = 0.0;
     const mpreal Js [] = {J3, J4};
 
     NumMethod::RunningStats<mpfr::mpreal> statoverlap, stateigdiff;
 
 
-    const int begin = 14;
-    const int end = 15;
-
+    const int begin = 10;
+    const int end = 11;
+    
+    YAML::Node edge_yaml = YAML::LoadFile("test_general.yaml");
+    std::vector<edge_mode_term> psiterms;
+    
+    for (int i=0; i < edge_yaml["Psi"].size(); ++i) {
+        psiterms.push_back(edge_mode_term(
+                psi_coeffs[i],
+                edge_yaml["Psi"][i]["xpos"].as<std::vector<int> > (),
+                edge_yaml["Psi"][i]["zpos"].as<std::vector<int> > ()));
+    }
+    
+    
     std::string hashlabel = "";
     if (CMD_LINE_PARAMS and argc > 4)
       hashlabel = std::string(argv[4]);
@@ -160,9 +320,9 @@ int main(int argc, char** argv) {
     NumMethod::ForLoopParams<mpreal> fparams;
     NumMethod::GetXFor<mpreal> recordx;
     NumMethod::EqualSpaceFor couplingsfor;
-    fparams.start = 0.1;
+    fparams.start = 0.0;
     fparams.end = 1.1;
-    fparams.numPoints = 6;
+    fparams.numPoints = 100;
 
     if (CMD_LINE_PARAMS)
       fparams = NumMethod::get_for_from_cmd<mpreal>(argv);
@@ -204,10 +364,19 @@ int main(int argc, char** argv) {
             sigz2[i] = i % 4 < 2 ? 1 : -1;
         }
 
-        auto couplingsbody = [&](mpreal f, int j) {
+        auto couplingsbody = [&](mpreal V, int j) {
+            
             HE = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
             HO = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
+            
+            
+            std::vector<mpreal> args = {f, V};
+            
+            SparseMatrixww Psi = psiterms[0](args, width, pows2);
 
+            for (int i = 1; i < psiterms.size(); i++)
+                Psi += psiterms[i](args, width, pows2);
+            //std::cout << Psi <<std::endl <<std::endl;
             //std::cout<< to_string(sigma_z_j(0, 0, 0, pows2)*((0+1) < width));
 
             for (ulong i = 0; i < pows2(width - 1); i++) {
@@ -288,9 +457,9 @@ int main(int argc, char** argv) {
             } else {
                 Arrayw overlap = Vectorw::Zero(pows2(width - 1));
                 for (int ispec = 0; ispec < pows2(width - 1); ispec++) {
-                    auto spec = evecsE.col(ispec).array();
+                    auto spec = evecsE.col(ispec);
                     for (int i = 0; i < sigz.size(); i++) {
-                        overlap(i) = (spec * sigz * evecsO.col(i).array()).sum();
+                        overlap(i) = spec.dot(Psi * evecsO.col(i))/sqrt(norm(args));
                     }
                     int maxind;
                     moverlaps[ispec] = overlap.abs().maxCoeff(&maxind);
@@ -357,7 +526,7 @@ int main(int argc, char** argv) {
         };
         couplingsfor.loop(couplingsbody, fparams);
 
-	std::string label = hashlabel + "Ising_L_" + to_string(width) + "_f_" + to_string(f);
+	std::string label = hashlabel + "Ising_generaltestV2_L_" + to_string(width) + "_f_" + to_string(f);
         if (WRITE_MEANS) {
             plotter.writeToFile(label + "_meanoverlap", fs, maxoverlap);
             plotter.writeToFile(label + "_meanediff", fs, eigdiffs);
@@ -381,3 +550,5 @@ int main(int argc, char** argv) {
 
 }
 #endif
+
+
