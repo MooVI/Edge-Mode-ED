@@ -138,20 +138,21 @@ int main(int argc, char** argv) {
     typedef Eigen::Array<mpreal, Eigen::Dynamic, 1> Arrayw;
     typedef Eigen::Array<mpreal, Eigen::Dynamic, Eigen::Dynamic> Arrayww;
 
-    const mpreal r = 0.05;
+    const mpreal r = 0.57;
+    const int staggered = 0;
     const mpreal J2 = 0.00;
     const mpreal J3 = 0.0;
-    const mpreal J4 = 1.0;
-    const mpreal J = 0.0;
-    const mpreal f = 0.00;
-    const mpreal V = 0.1;
+    const mpreal J4 = 0.0;
+    const mpreal J = 1.0;
+    const mpreal f = 0.05;
+    const mpreal V = 0.0;
     const mpreal Js [] = {J3, J4};
 
     NumMethod::RunningStats<mpfr::mpreal> statoverlap, stateigdiff;
 
 
     const int begin = 8;
-    const int end = 13;
+    const int end = 11;
 
     std::string hashlabel = "";
     if (CMD_LINE_PARAMS and argc > 4)
@@ -204,8 +205,13 @@ int main(int argc, char** argv) {
             sigz2[i] = i % 4 < 2 ? 1 : -1;
         }
 
-        auto couplingsbody = [&](mpreal J3, int j) {
-	    const mpreal Js [] = {J3, J4};
+        auto couplingsbody = [&](mpreal J2, int j) {
+	  const mpreal Js [] = {J3, J4};
+	  std::vector<mpreal> J2s (width);
+	  
+	  for (int i=1; i<width;++i)
+	    J2s[i] = J2;
+	  J2s[staggered] *= r;
             HE = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
             HO = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
 
@@ -216,12 +222,12 @@ int main(int argc, char** argv) {
                     for (ulong jsite = 0; jsite < width; jsite++) {
                         HE(i, j) += -f * sigma_x_j(i, j, jsite, pows2, width, ignoremask)
                                 - J * sigma_z_j_z_m(i, j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
-                                - J2 * sigma_z_j_z_m(i, j, jsite, jsite + 2, pows2)*(((jsite + 2) < width))
+                                - J2s[jsite] * sigma_z_j_z_m(i, j, jsite, jsite + 2, pows2)*(((jsite + 2) < width))
                                 - V * sigma_x_j_x_m(i, j, jsite, jsite + 1, pows2, width, ignoremask)*((jsite + 1) < width)
                                 - Js[jsite % 2] * sigma_z_p_x_j_z_m(i, j, jsite, jsite + 1, jsite + 2, pows2, width, ignoremask)*(((jsite + 2) < width));
                         HO(i, j) += -f * sigma_x_j(~i, ~j, jsite, pows2, width, ignoremask)
                                 - J * sigma_z_j_z_m(~i, ~j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
-                                - J2 * sigma_z_j_z_m(~i, ~j, jsite, jsite + 2, pows2)*(((jsite + 2) < width))
+                                - J2s[jsite] * sigma_z_j_z_m(~i, ~j, jsite, jsite + 2, pows2)*(((jsite + 2) < width))
                                 - V * sigma_x_j_x_m(~i, ~j, jsite, jsite + 1, pows2, width, ignoremask)*((jsite + 1) < width)
                                 - Js[jsite % 2] * sigma_z_p_x_j_z_m(~i, ~j, jsite, jsite + 1, jsite + 2, pows2, width, ignoremask)*(((jsite + 2) < width));
                     }
@@ -358,7 +364,8 @@ int main(int argc, char** argv) {
         };
         couplingsfor.loop(couplingsbody, fparams);
 
-	std::string label = hashlabel + "Ising_Chris_L_" + to_string(width) + "_f_" + to_string(f) + "_V_" +to_string(V);
+	std::string label = hashlabel + "Ising_L_" + to_string(width)
+	+ "_f_" + to_string(f) +"_J2stag_"+ to_string(staggered) + "_r_" +to_string(r);
         if (WRITE_MEANS) {
             plotter.writeToFile(label + "_meanoverlap", fs, maxoverlap);
             plotter.writeToFile(label + "_meanediff", fs, eigdiffs);
