@@ -5,7 +5,7 @@
  * Created on 13 October 2014, 11:54
  */
 
-#if 0
+#if 1
 
 #include<Eigen/Dense>
 #include<Eigen/MPRealSupport>
@@ -123,14 +123,14 @@ int main(int argc, char** argv) {
     const bool WRITE_ENERGIES = true;
     const bool WRITE_OVERLAPS = true;
     const bool WRITE_BULK = false;
-    const bool WRITE_MEANS = false;
-    const bool WRITE_VARS = false;
+    const bool WRITE_MEANS = true;
+    const bool WRITE_VARS = true;
     const bool WRITE_MAX_OVERLAPS = false;
     const bool WRITE_PAIRED_EDIFFS = false;
-    const bool WRITE_ALL_DECAY = true;
-    const bool WRITE_PAIRED_DECAY = true;
+    const bool WRITE_ALL_DECAY = false;
+    const bool WRITE_PAIRED_DECAY = false;
 
-    const bool CMD_LINE_PARAMS = false;
+    const bool CMD_LINE_PARAMS = true;
 
 
     typedef Eigen::Matrix<mpreal, Eigen::Dynamic, Eigen::Dynamic> Matrixww;
@@ -141,17 +141,17 @@ int main(int argc, char** argv) {
     const mpreal r = 0.05;
     const mpreal J2 = 0.00;
     const mpreal J3 = 0.0;
-    const mpreal J4 = 0.0;
-    const mpreal J = 1.0;
-    const mpreal f = 0.4;
-    const mpreal V = 0.0;
+    const mpreal J4 = 1.0;
+    const mpreal J = 0.0;
+    const mpreal f = 0.00;
+    const mpreal V = 0.1;
     const mpreal Js [] = {J3, J4};
 
     NumMethod::RunningStats<mpfr::mpreal> statoverlap, stateigdiff;
 
 
-    const int begin = 14;
-    const int end = 15;
+    const int begin = 8;
+    const int end = 13;
 
     std::string hashlabel = "";
     if (CMD_LINE_PARAMS and argc > 4)
@@ -204,7 +204,8 @@ int main(int argc, char** argv) {
             sigz2[i] = i % 4 < 2 ? 1 : -1;
         }
 
-        auto couplingsbody = [&](mpreal f, int j) {
+        auto couplingsbody = [&](mpreal J3, int j) {
+	    const mpreal Js [] = {J3, J4};
             HE = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
             HO = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
 
@@ -357,7 +358,7 @@ int main(int argc, char** argv) {
         };
         couplingsfor.loop(couplingsbody, fparams);
 
-	std::string label = hashlabel + "Ising_L_" + to_string(width) + "_f_" + to_string(f);
+	std::string label = hashlabel + "Ising_Chris_L_" + to_string(width) + "_f_" + to_string(f) + "_V_" +to_string(V);
         if (WRITE_MEANS) {
             plotter.writeToFile(label + "_meanoverlap", fs, maxoverlap);
             plotter.writeToFile(label + "_meanediff", fs, eigdiffs);

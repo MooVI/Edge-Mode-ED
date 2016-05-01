@@ -5,7 +5,7 @@
  * Created on 13 October 2014, 11:54
  */
 
-#if 1
+#if 0
 
 
 #include<Eigen/Dense>
@@ -35,7 +35,7 @@ typedef unsigned long ulong;
 typedef std::vector<std::vector<mpreal> > vvmpreal;
 
 
-#include"test_general.h"
+#include"c_J2large_onlyf3.h"
 
 typedef Eigen::Matrix<mpreal, Eigen::Dynamic, Eigen::Dynamic> Matrixww;
 typedef Eigen::SparseMatrix<mpreal> SparseMatrixww;
@@ -284,7 +284,7 @@ int main(int argc, char** argv) {
     const bool WRITE_ALL_DECAY = false;
     const bool WRITE_PAIRED_DECAY = false;
 
-    const bool CMD_LINE_PARAMS = false;
+    const bool CMD_LINE_PARAMS = true;
 
 
     const mpreal r = 0.05;
@@ -292,17 +292,17 @@ int main(int argc, char** argv) {
     const mpreal J3 = 0.0;
     const mpreal J4 = 0.0;
     const mpreal J = 1.0;
-    const mpreal f = 0.05;
+    const mpreal f = 0.35;
     const mpreal V = 0.0;
     const mpreal Js [] = {J3, J4};
 
     NumMethod::RunningStats<mpfr::mpreal> statoverlap, stateigdiff;
 
 
-    const int begin = 10;
-    const int end = 11;
+    const int begin = 8;
+    const int end = 13;
     
-    YAML::Node edge_yaml = YAML::LoadFile("test_general.yaml");
+    YAML::Node edge_yaml = YAML::LoadFile("c_J2large_onlyf3.yaml");
     std::vector<edge_mode_term> psiterms;
     
     for (int i=0; i < edge_yaml["Psi"].size(); ++i) {
@@ -364,13 +364,13 @@ int main(int argc, char** argv) {
             sigz2[i] = i % 4 < 2 ? 1 : -1;
         }
 
-        auto couplingsbody = [&](mpreal V, int j) {
+        auto couplingsbody = [&](mpreal J2, int j) {
             
             HE = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
             HO = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
             
             
-            std::vector<mpreal> args = {f, V};
+            std::vector<mpreal> args = {f, J2};
             
             SparseMatrixww Psi = psiterms[0](args, width, pows2);
 
@@ -526,7 +526,7 @@ int main(int argc, char** argv) {
         };
         couplingsfor.loop(couplingsbody, fparams);
 
-	std::string label = hashlabel + "Ising_generaltestV2_L_" + to_string(width) + "_f_" + to_string(f);
+	std::string label = hashlabel + "Ising_J2onlyf3_L_" + to_string(width) + "_f_" + to_string(f);
         if (WRITE_MEANS) {
             plotter.writeToFile(label + "_meanoverlap", fs, maxoverlap);
             plotter.writeToFile(label + "_meanediff", fs, eigdiffs);
