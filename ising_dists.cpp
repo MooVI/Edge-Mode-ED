@@ -120,8 +120,8 @@ int main(int argc, char** argv) {
     constexpr int maxwidth = 16;
     powersoftwo < maxwidth + 1 > pows2;
 
-    const bool WRITE_ENERGIES = true;
-    const bool WRITE_OVERLAPS = true;
+    const bool WRITE_ENERGIES = false;
+    const bool WRITE_OVERLAPS = false;
     const bool WRITE_BULK = false;
     const bool WRITE_MEANS = true;
     const bool WRITE_VARS = true;
@@ -138,13 +138,13 @@ int main(int argc, char** argv) {
     typedef Eigen::Array<mpreal, Eigen::Dynamic, 1> Arrayw;
     typedef Eigen::Array<mpreal, Eigen::Dynamic, Eigen::Dynamic> Arrayww;
 
-    const mpreal r = 0.57;
+    const mpreal r = 1.0;
     const int staggered = 0;
-    const mpreal J2 = 0.00;
+    const mpreal J2 = 0.25;
     const mpreal J3 = 0.0;
     const mpreal J4 = 0.0;
     const mpreal J = 1.0;
-    const mpreal f = 0.05;
+    const mpreal f = 0.2;
     const mpreal V = 0.0;
     const mpreal Js [] = {J3, J4};
 
@@ -152,7 +152,7 @@ int main(int argc, char** argv) {
 
 
     const int begin = 8;
-    const int end = 11;
+    const int end = 13;
 
     std::string hashlabel = "";
     if (CMD_LINE_PARAMS and argc > 4)
@@ -160,7 +160,7 @@ int main(int argc, char** argv) {
 
     NumMethod::ForLoopParams<mpreal> fparams;
     NumMethod::GetXFor<mpreal> recordx;
-    NumMethod::EqualSpaceFor couplingsfor;
+    NumMethod::LogFor couplingsfor;
     fparams.start = 0.1;
     fparams.end = 1.1;
     fparams.numPoints = 6;
@@ -205,11 +205,11 @@ int main(int argc, char** argv) {
             sigz2[i] = i % 4 < 2 ? 1 : -1;
         }
 
-        auto couplingsbody = [&](mpreal J2, int j) {
+        auto couplingsbody = [&](mpreal f, int j) {
 	  const mpreal Js [] = {J3, J4};
 	  std::vector<mpreal> J2s (width);
 	  
-	  for (int i=1; i<width;++i)
+	  for (int i=0; i<width;++i)
 	    J2s[i] = J2;
 	  J2s[staggered] *= r;
             HE = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
@@ -364,8 +364,8 @@ int main(int argc, char** argv) {
         };
         couplingsfor.loop(couplingsbody, fparams);
 
-	std::string label = hashlabel + "Ising_L_" + to_string(width)
-	+ "_f_" + to_string(f) +"_J2stag_"+ to_string(staggered) + "_r_" +to_string(r);
+	std::string label = hashlabel + "Ising_heightpolelog_L_" + to_string(width)
+	+ "_J2_" + to_string(J2);
         if (WRITE_MEANS) {
             plotter.writeToFile(label + "_meanoverlap", fs, maxoverlap);
             plotter.writeToFile(label + "_meanediff", fs, eigdiffs);
