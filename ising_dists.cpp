@@ -140,19 +140,19 @@ int main(int argc, char** argv) {
 
     const mpreal r = 1.0;
     const int staggered = 0;
-    const mpreal J2 = 0.25;
+    const mpreal J2 = 0.5;
     const mpreal J3 = 0.0;
     const mpreal J4 = 0.0;
     const mpreal J = 1.0;
-    const mpreal f = 0.2;
+    const mpreal f = 0.01;
     const mpreal V = 0.0;
     const mpreal Js [] = {J3, J4};
 
     NumMethod::RunningStats<mpfr::mpreal> statoverlap, stateigdiff;
 
 
-    const int begin = 8;
-    const int end = 13;
+    const int begin = 14;
+    const int end = 15;
 
     std::string hashlabel = "";
     if (CMD_LINE_PARAMS and argc > 4)
@@ -161,7 +161,7 @@ int main(int argc, char** argv) {
     NumMethod::ForLoopParams<mpreal> fparams;
     NumMethod::GetXFor<mpreal> recordx;
     NumMethod::LogFor couplingsfor;
-    fparams.start = 0.1;
+    fparams.start = 0.2;
     fparams.end = 1.1;
     fparams.numPoints = 6;
 
@@ -175,7 +175,7 @@ int main(int argc, char** argv) {
     fs = recordx.get_x();
     recordx.clear();
 
-    NumMethod::LogFor tfor;
+    NumMethod::EqualSpaceFor tfor;
     NumMethod::ForLoopParams<mpreal> tparams;
     std::vector<mpreal> ts;
     if (WRITE_ALL_DECAY | WRITE_PAIRED_DECAY) {
