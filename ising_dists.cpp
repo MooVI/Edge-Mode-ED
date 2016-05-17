@@ -99,16 +99,14 @@ inline int sigma_z_p_x_j_z_m(ulong x, ulong y, ulong p, ulong j, ulong m, powers
 }
 
 template<typename T>
-std::string to_string(T value){
+std::string to_string(T value) {
     return std::to_string(value);
 }
 
 template<>
-std::string to_string(mpfr::mpreal value){
+std::string to_string(mpfr::mpreal value) {
     return std::to_string(value.toDouble());
 }
-
-
 
 /*
  *
@@ -130,7 +128,10 @@ int main(int argc, char** argv) {
     const bool WRITE_ALL_DECAY = false;
     const bool WRITE_PAIRED_DECAY = false;
 
-    const bool CMD_LINE_PARAMS = true;
+    const bool FINITE_TEMPERATURE = true;
+
+
+    const bool CMD_LINE_PARAMS = false;
 
 
     typedef Eigen::Matrix<mpreal, Eigen::Dynamic, Eigen::Dynamic> Matrixww;
@@ -140,33 +141,35 @@ int main(int argc, char** argv) {
 
     const mpreal r = 1.0;
     const int staggered = 0;
-    const mpreal J2 = 0.5;
+    const mpreal J2 = 1.0;
     const mpreal J3 = 0.0;
     const mpreal J4 = 0.0;
     const mpreal J = 1.0;
-    const mpreal f = 0.01;
+    const mpreal f = 0.5;
     const mpreal V = 0.0;
     const mpreal Js [] = {J3, J4};
 
+    const mpreal T = 0.5;
+
     NumMethod::RunningStats<mpfr::mpreal> statoverlap, stateigdiff;
+    NumMethod::WeightedRunningStats<mpfr::mpreal> wstatoverlap, wstateigdiff;
 
-
-    const int begin = 14;
-    const int end = 15;
+    const int begin = 10;
+    const int end = 11;
 
     std::string hashlabel = "";
     if (CMD_LINE_PARAMS and argc > 4)
-      hashlabel = std::string(argv[4]);
+        hashlabel = std::string(argv[4]);
 
     NumMethod::ForLoopParams<mpreal> fparams;
     NumMethod::GetXFor<mpreal> recordx;
-    NumMethod::LogFor couplingsfor;
-    fparams.start = 0.2;
-    fparams.end = 1.1;
-    fparams.numPoints = 6;
+    NumMethod::EqualSpaceFor couplingsfor;
+    fparams.start = 0.05;
+    fparams.end = 10;
+    fparams.numPoints = 500;
 
     if (CMD_LINE_PARAMS)
-      fparams = NumMethod::get_for_from_cmd<mpreal>(argv);
+        fparams = NumMethod::get_for_from_cmd<mpreal>(argv);
 
 
     std::vector<mpfr::mpreal> maxoverlap, eigdiffs, varoverlaps, vareigdiffs;
@@ -205,13 +208,14 @@ int main(int argc, char** argv) {
             sigz2[i] = i % 4 < 2 ? 1 : -1;
         }
 
-        auto couplingsbody = [&](mpreal f, int j) {
-	  const mpreal Js [] = {J3, J4};
-	  std::vector<mpreal> J2s (width);
-	  
-	  for (int i=0; i<width;++i)
-	    J2s[i] = J2;
-	  J2s[staggered] *= r;
+        auto couplingsbody = [&](mpreal T, int j) {
+            mpreal beta = 1.0/T;
+            const mpreal Js [] = {J3, J4};
+            std::vector<mpreal> J2s(width);
+
+            for (int i = 0; i < width; ++i)
+                J2s[i] = J2;
+            J2s[staggered] *= r;
             HE = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
             HO = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
 
@@ -244,6 +248,10 @@ int main(int argc, char** argv) {
             auto eigsO = esO.eigenvalues();
             auto evecsE = esE.eigenvectors();
             auto evecsO = esO.eigenvectors();
+            mpreal partE;
+            if (FINITE_TEMPERATURE) {
+                partE = eigsE.array().unaryExpr([ = ](mpreal x){return exp(-beta * x);}).sum();
+            }
             std::string label = "Ising_L_" + to_string(width) + "_f_" + to_string(f)
                     + "_V_" + to_string(V);
 
@@ -258,39 +266,44 @@ int main(int argc, char** argv) {
                     for (int i = 0; i < sigz.size(); i++) {
                         overlap(i, ispec) = (spec * sigz * evecsO.col(i).array()).sum();
                     }
-                    
+
                     int maxind;
                     moverlaps[ispec] = overlap.col(ispec).abs().maxCoeff(&maxind);
                     meigdiff[ispec] = eigsE[ispec] - eigsO[maxind];
-		        if (WRITE_VARS or WRITE_MEANS){
-		      statoverlap.Push(moverlaps[ispec]);
-		      stateigdiff.Push(meigdiff[ispec]);
-			}
+                    if (WRITE_VARS or WRITE_MEANS) {
+                        if (FINITE_TEMPERATURE) {
+                            statoverlap.Push(moverlaps[ispec] * exp(-beta * eigsE[ispec]));
+                            stateigdiff.Push(meigdiff[ispec] * exp(-beta * eigsE[ispec]));
+                        } else {
+                            statoverlap.Push(moverlaps[ispec]);
+                            stateigdiff.Push(meigdiff[ispec]);
+                        }
+                    }
                     if (WRITE_ENERGIES)
                         outEs << eigsE[ispec] << '\n' << eigsO[ispec] << '\n';
                 }
-                if (WRITE_OVERLAPS){
-                std::ofstream outoverlaps;
-                outoverlaps.open((label + "_overlaps_states").c_str(), std::ios::trunc);
-                outoverlaps << overlap;
-                outoverlaps.flush();
-                outoverlaps.close();
+                if (WRITE_OVERLAPS) {
+                    std::ofstream outoverlaps;
+                    outoverlaps.open((label + "_overlaps_states").c_str(), std::ios::trunc);
+                    outoverlaps << overlap;
+                    outoverlaps.flush();
+                    outoverlaps.close();
                 }
-                if (WRITE_ALL_DECAY){
-                    Arrayw toverlaps (tparams.numPoints);
+                if (WRITE_ALL_DECAY) {
+                    Arrayw toverlaps(tparams.numPoints);
                     overlap = overlap.array().square();
-                    Arrayww alleigdiff(pows2(width-1), pows2(width-1));
+                    Arrayww alleigdiff(pows2(width - 1), pows2(width - 1));
                     for (ulong i = 0; i < pows2(width - 1); i++) {
                         for (ulong j = 0; j < pows2(width - 1); j++) {
                             alleigdiff(i, j) = eigsE[j] - eigsO[i];
                         }
                     }
                     auto tfunc = [&](mpreal t, int j) {
-                        toverlaps[j] = ((overlap.array()*alleigdiff.unaryExpr([ = ](mpreal x){return cos(x * t);})).sum()/(mpreal) pows2(width-1));
+                        toverlaps[j] = ((overlap.array() * alleigdiff.unaryExpr([ = ](mpreal x){return cos(x * t);})).sum() / (mpreal) pows2(width - 1));
                         return false;
                     };
                     tfor.loop(tfunc, tparams);
-                    plotter.writeToFile(label+"_long_decay", ts, toverlaps);
+                    plotter.writeToFile(label + "_long_decay", ts, toverlaps);
                 }
             } else {
                 Arrayw overlap = Vectorw::Zero(pows2(width - 1));
@@ -302,10 +315,15 @@ int main(int argc, char** argv) {
                     int maxind;
                     moverlaps[ispec] = overlap.abs().maxCoeff(&maxind);
                     meigdiff[ispec] = eigsE[ispec] - eigsO[maxind];
-		    if (WRITE_VARS or WRITE_MEANS){
-		      statoverlap.Push(moverlaps[ispec]);
-		      stateigdiff.Push(meigdiff[ispec]);
-		    }
+                    if (WRITE_VARS or WRITE_MEANS) {
+                        if (FINITE_TEMPERATURE) {
+                            statoverlap.Push(moverlaps[ispec] * exp(-beta * eigsE[ispec]));
+                            stateigdiff.Push(meigdiff[ispec] * exp(-beta * eigsE[ispec]));
+                        } else {
+                            statoverlap.Push(moverlaps[ispec]);
+                            stateigdiff.Push(meigdiff[ispec]);
+                        }
+                    }
                     if (WRITE_ENERGIES)
                         outEs << eigsE[ispec] << '\n' << eigsO[ispec] << '\n';
                 }
@@ -314,7 +332,7 @@ int main(int argc, char** argv) {
                 outEs.flush();
                 outEs.close();
             }
-            
+
             if (WRITE_MAX_OVERLAPS)
                 plotter.writeToFile(label + "_maxoverlaps", moverlaps);
             if (WRITE_PAIRED_EDIFFS)
@@ -349,35 +367,45 @@ int main(int argc, char** argv) {
                 }
             }
             if (WRITE_MEANS) {
-                maxoverlap.push_back(statoverlap.Mean());
-                eigdiffs.push_back(stateigdiff.Mean());
+                if (FINITE_TEMPERATURE){
+                    maxoverlap.push_back(pows2(width-1)*statoverlap.Mean()/partE);
+                    eigdiffs.push_back(pows2(width-1)*stateigdiff.Mean()/partE);
+                } else {
+                    maxoverlap.push_back(statoverlap.Mean());
+                    eigdiffs.push_back(stateigdiff.Mean());
+                }
             }
-	    if (WRITE_VARS){
-	      varoverlaps.push_back(statoverlap.Variance());
-	      vareigdiffs.push_back(stateigdiff.Variance());
-	    }
-	    if (WRITE_VARS or WRITE_MEANS){
-	      statoverlap.Clear();
-	      stateigdiff.Clear();
-	    }
+            if (WRITE_VARS) {
+                if (FINITE_TEMPERATURE){
+                    varoverlaps.push_back(pows2(width-1)*pows2(width-1)*statoverlap.Variance()/(partE*partE));
+                    vareigdiffs.push_back(pows2(width-1)*pows2(width-1)*stateigdiff.Variance()/(partE*partE));
+                } else {
+                    varoverlaps.push_back(statoverlap.Variance());
+                    vareigdiffs.push_back(stateigdiff.Variance());
+                }
+            }
+            if (WRITE_VARS or WRITE_MEANS) {
+                statoverlap.Clear();
+                stateigdiff.Clear();
+            }
             return false;
         };
         couplingsfor.loop(couplingsbody, fparams);
 
-	std::string label = hashlabel + "Ising_heightpolelog_L_" + to_string(width)
-	+ "_J2_" + to_string(J2);
+        std::string label = hashlabel + "Ising_temptestJ2_L_" + to_string(width)
+                + "_J2_" + to_string(J2)+"_f_"+to_string(f);
         if (WRITE_MEANS) {
             plotter.writeToFile(label + "_meanoverlap", fs, maxoverlap);
             plotter.writeToFile(label + "_meanediff", fs, eigdiffs);
-	    maxoverlap.clear();
-	    eigdiffs.clear();
+            maxoverlap.clear();
+            eigdiffs.clear();
         }
-	if (WRITE_VARS){
-	  plotter.writeToFile(label + "_varoverlap", fs, varoverlaps);
-	  plotter.writeToFile(label + "_varediff", fs, vareigdiffs);
-	  varoverlaps.clear();
-	  vareigdiffs.clear();
-	}
+        if (WRITE_VARS) {
+            plotter.writeToFile(label + "_varoverlap", fs, varoverlaps);
+            plotter.writeToFile(label + "_varediff", fs, vareigdiffs);
+            varoverlaps.clear();
+            vareigdiffs.clear();
+        }
         return false;
     };
 
