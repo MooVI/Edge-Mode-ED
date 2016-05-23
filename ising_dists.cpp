@@ -121,14 +121,15 @@ int main(int argc, char** argv) {
     const bool WRITE_ENERGIES = false;
     const bool WRITE_OVERLAPS = false;
     const bool WRITE_BULK = false;
-    const bool WRITE_MEANS = true;
-    const bool WRITE_VARS = true;
+    const bool WRITE_MEANS = false;
+    const bool WRITE_VARS = false;
     const bool WRITE_MAX_OVERLAPS = false;
     const bool WRITE_PAIRED_EDIFFS = false;
     const bool WRITE_ALL_DECAY = false;
     const bool WRITE_PAIRED_DECAY = false;
 
-    const bool FINITE_TEMPERATURE = true;
+    const bool FINITE_TEMPERATURE = false;
+    const bool FINITE_TEMPERATURE_LOOP = true;
 
 
     const bool CMD_LINE_PARAMS = false;
@@ -141,21 +142,21 @@ int main(int argc, char** argv) {
 
     const mpreal r = 1.0;
     const int staggered = 0;
-    const mpreal J2 = 1.0;
+    const mpreal J2 = 0.0;
     const mpreal J3 = 0.0;
     const mpreal J4 = 0.0;
     const mpreal J = 1.0;
-    const mpreal f = 0.5;
+    const mpreal f = 0.05;
     const mpreal V = 0.0;
     const mpreal Js [] = {J3, J4};
 
-    const mpreal T = 0.5;
+    const mpreal T = 0.1;
 
     NumMethod::RunningStats<mpfr::mpreal> statoverlap, stateigdiff;
     NumMethod::WeightedRunningStats<mpfr::mpreal> wstatoverlap, wstateigdiff;
 
-    const int begin = 10;
-    const int end = 11;
+    const int begin = 12;
+    const int end = 13;
 
     std::string hashlabel = "";
     if (CMD_LINE_PARAMS and argc > 4)
@@ -164,9 +165,9 @@ int main(int argc, char** argv) {
     NumMethod::ForLoopParams<mpreal> fparams;
     NumMethod::GetXFor<mpreal> recordx;
     NumMethod::EqualSpaceFor couplingsfor;
-    fparams.start = 0.05;
-    fparams.end = 10;
-    fparams.numPoints = 500;
+    fparams.start = 0.0;
+    fparams.end = 3.5;
+    fparams.numPoints = 8;
 
     if (CMD_LINE_PARAMS)
         fparams = NumMethod::get_for_from_cmd<mpreal>(argv);
@@ -189,7 +190,19 @@ int main(int argc, char** argv) {
         ts = recordx.get_x();
         recordx.clear();
     }
-
+    
+    NumMethod::EqualSpaceFor Tfor;
+    NumMethod::ForLoopParams<mpreal> Tparams;
+    std::vector<mpreal> Ts;
+    if (FINITE_TEMPERATURE_LOOP) {
+        Tparams.start = 0.05;
+        Tparams.end = 10;
+        Tparams.numPoints = 500;
+        Tfor.loop(recordx, Tparams);
+        Ts = recordx.get_x();
+        recordx.clear();
+    }
+    
     auto body = [&](int width, int i) {
 
 
@@ -208,7 +221,7 @@ int main(int argc, char** argv) {
             sigz2[i] = i % 4 < 2 ? 1 : -1;
         }
 
-        auto couplingsbody = [&](mpreal T, int j) {
+        auto couplingsbody = [&](mpreal J2, int j) {
             mpreal beta = 1.0/T;
             const mpreal Js [] = {J3, J4};
             std::vector<mpreal> J2s(width);
@@ -249,11 +262,8 @@ int main(int argc, char** argv) {
             auto evecsE = esE.eigenvectors();
             auto evecsO = esO.eigenvectors();
             mpreal partE;
-            if (FINITE_TEMPERATURE) {
-                partE = eigsE.array().unaryExpr([ = ](mpreal x){return exp(-beta * x);}).sum();
-            }
             std::string label = "Ising_L_" + to_string(width) + "_f_" + to_string(f)
-                    + "_V_" + to_string(V);
+                    + "_J2_" + to_string(J2);
 
             std::ofstream outEs;
             if (WRITE_ENERGIES)
@@ -272,8 +282,9 @@ int main(int argc, char** argv) {
                     meigdiff[ispec] = eigsE[ispec] - eigsO[maxind];
                     if (WRITE_VARS or WRITE_MEANS) {
                         if (FINITE_TEMPERATURE) {
-                            statoverlap.Push(moverlaps[ispec] * exp(-beta * eigsE[ispec]));
-                            stateigdiff.Push(meigdiff[ispec] * exp(-beta * eigsE[ispec]));
+                            mpreal weight = exp(-beta * eigsE[ispec]);
+                            wstatoverlap.Push(moverlaps[ispec], weight);
+                            wstateigdiff.Push(meigdiff[ispec], weight);
                         } else {
                             statoverlap.Push(moverlaps[ispec]);
                             stateigdiff.Push(meigdiff[ispec]);
@@ -317,8 +328,9 @@ int main(int argc, char** argv) {
                     meigdiff[ispec] = eigsE[ispec] - eigsO[maxind];
                     if (WRITE_VARS or WRITE_MEANS) {
                         if (FINITE_TEMPERATURE) {
-                            statoverlap.Push(moverlaps[ispec] * exp(-beta * eigsE[ispec]));
-                            stateigdiff.Push(meigdiff[ispec] * exp(-beta * eigsE[ispec]));
+                            mpreal weight = exp(-beta * eigsE[ispec]);
+                            wstatoverlap.Push(moverlaps[ispec], weight);
+                            wstateigdiff.Push(meigdiff[ispec], weight);
                         } else {
                             statoverlap.Push(moverlaps[ispec]);
                             stateigdiff.Push(meigdiff[ispec]);
@@ -347,6 +359,27 @@ int main(int argc, char** argv) {
                 tfor.loop(tfunc, tparams);
                 plotter.writeToFile(label + "_paired_decay", ts, toverlaps);
             }
+            if (FINITE_TEMPERATURE_LOOP){
+                Arrayw weights (pows2(width-1));
+                Arrayw mean_overlaps(Tparams.numPoints);
+                Arrayw variance_overlaps(Tparams.numPoints);
+                Arrayw mean_ediff(Tparams.numPoints);
+                Arrayw variance_ediff(Tparams.numPoints);
+                auto Tfunc = [&](mpreal T, int j) {
+                    weights = eigsE.unaryExpr([ = ](mpreal x){return exp(-x/T);});
+                    NumMethod::WeightedRunningStats<mpreal> Tstatoverlap(moverlaps, weights), Tstatediff(meigdiff, weights);
+                    mean_overlaps[j] = Tstatoverlap.Mean();
+                    variance_overlaps[j]= Tstatoverlap.Variance();
+                    mean_ediff[j] = Tstatediff.Mean();
+                    variance_ediff[j] = Tstatediff.Variance();
+                    return false;
+                };
+                Tfor.loop(Tfunc, Tparams);
+                plotter.writeToFile(label + "_Tmeanoverlap", Ts, mean_overlaps);
+                plotter.writeToFile(label + "_Tvaroverlap", Ts, variance_overlaps);
+                plotter.writeToFile(label + "_Tmeanediff", Ts, mean_ediff);
+                plotter.writeToFile(label + "_Tvarediff", Ts, variance_ediff);
+            }
             if (WRITE_BULK) {
                 Arrayww overlap = Matrixww::Zero(pows2(width - 1), width);
                 const int bulkspec = pows2(width - 2);
@@ -368,8 +401,8 @@ int main(int argc, char** argv) {
             }
             if (WRITE_MEANS) {
                 if (FINITE_TEMPERATURE){
-                    maxoverlap.push_back(pows2(width-1)*statoverlap.Mean()/partE);
-                    eigdiffs.push_back(pows2(width-1)*stateigdiff.Mean()/partE);
+                    maxoverlap.push_back(wstatoverlap.Mean());
+                    eigdiffs.push_back(wstateigdiff.Mean());
                 } else {
                     maxoverlap.push_back(statoverlap.Mean());
                     eigdiffs.push_back(stateigdiff.Mean());
@@ -377,8 +410,8 @@ int main(int argc, char** argv) {
             }
             if (WRITE_VARS) {
                 if (FINITE_TEMPERATURE){
-                    varoverlaps.push_back(pows2(width-1)*pows2(width-1)*statoverlap.Variance()/(partE*partE));
-                    vareigdiffs.push_back(pows2(width-1)*pows2(width-1)*stateigdiff.Variance()/(partE*partE));
+                    varoverlaps.push_back(wstatoverlap.Variance());
+                    vareigdiffs.push_back(wstateigdiff.Variance());
                 } else {
                     varoverlaps.push_back(statoverlap.Variance());
                     vareigdiffs.push_back(stateigdiff.Variance());
@@ -387,13 +420,15 @@ int main(int argc, char** argv) {
             if (WRITE_VARS or WRITE_MEANS) {
                 statoverlap.Clear();
                 stateigdiff.Clear();
+                wstatoverlap.Clear();
+                wstateigdiff.Clear(); 
             }
             return false;
         };
         couplingsfor.loop(couplingsbody, fparams);
 
-        std::string label = hashlabel + "Ising_temptestJ2_L_" + to_string(width)
-                + "_J2_" + to_string(J2)+"_f_"+to_string(f);
+        std::string label = hashlabel + "Ising_temptest_L_" + to_string(width)
+                + "_V_" + to_string(V)+"_f_"+to_string(f);
         if (WRITE_MEANS) {
             plotter.writeToFile(label + "_meanoverlap", fs, maxoverlap);
             plotter.writeToFile(label + "_meanediff", fs, eigdiffs);
