@@ -129,7 +129,8 @@ int main(int argc, char** argv) {
     const bool WRITE_PAIRED_DECAY = false;
 
     const bool FINITE_TEMPERATURE = false;
-    const bool FINITE_TEMPERATURE_LOOP = true;
+    const bool FINITE_TEMPERATURE_LOOP = false;
+    const bool ENERGY_WINDOW_LOOP = true;
 
 
     const bool CMD_LINE_PARAMS = false;
@@ -151,12 +152,13 @@ int main(int argc, char** argv) {
     const mpreal Js [] = {J3, J4};
 
     const mpreal T = 0.1;
+    const mpreal Ew = 0.0;
 
     NumMethod::RunningStats<mpfr::mpreal> statoverlap, stateigdiff;
     NumMethod::WeightedRunningStats<mpfr::mpreal> wstatoverlap, wstateigdiff;
 
-    const int begin = 12;
-    const int end = 13;
+    const int begin = 8;
+    const int end = 11;
 
     std::string hashlabel = "";
     if (CMD_LINE_PARAMS and argc > 4)
@@ -200,6 +202,18 @@ int main(int argc, char** argv) {
         Tparams.numPoints = 500;
         Tfor.loop(recordx, Tparams);
         Ts = recordx.get_x();
+        recordx.clear();
+    }
+    
+    NumMethod::EqualSpaceFor Efor;
+    NumMethod::ForLoopParams<mpreal> Eparams;
+    std::vector<mpreal> Es;
+    if (ENERGY_WINDOW_LOOP) {
+        Eparams.start = 0.0;
+        Eparams.end = 1;
+        Eparams.numPoints = 500;
+        Efor.loop(recordx, Eparams);
+        Es = recordx.get_x();
         recordx.clear();
     }
     
@@ -380,6 +394,28 @@ int main(int argc, char** argv) {
                 plotter.writeToFile(label + "_Tmeanediff", Ts, mean_ediff);
                 plotter.writeToFile(label + "_Tvarediff", Ts, variance_ediff);
             }
+            if (ENERGY_WINDOW_LOOP){
+                Arrayw weights (pows2(width-1));
+                Arrayw mean_overlaps(Eparams.numPoints);
+                Arrayw variance_overlaps(Eparams.numPoints);
+                Arrayw mean_ediff(Eparams.numPoints);
+                Arrayw variance_ediff(Eparams.numPoints);
+                auto Efunc = [&](mpreal Efraction, int j) {
+                    mpreal E = Efraction*(eigsE[pows2(width-1)-1]-eigsE[0])+eigsE[0];
+                    weights = eigsE.unaryExpr([ = ](mpreal x){return x < E ? 1.0 : 0.0;});
+                    NumMethod::WeightedRunningStats<mpreal> Estatoverlap(moverlaps, weights), Estatediff(meigdiff, weights);
+                    mean_overlaps[j] = Estatoverlap.Mean();
+                    variance_overlaps[j]= Estatoverlap.Variance();
+                    mean_ediff[j] = Estatediff.Mean();
+                    variance_ediff[j] = Estatediff.Variance();
+                    return false;
+                };
+                Efor.loop(Efunc, Eparams);
+                plotter.writeToFile(label + "_Emeanoverlap", Es, mean_overlaps);
+                plotter.writeToFile(label + "_Evaroverlap", Es, variance_overlaps);
+                plotter.writeToFile(label + "_Emeanediff", Es, mean_ediff);
+                plotter.writeToFile(label + "_Evarediff", Es, variance_ediff);
+            }
             if (WRITE_BULK) {
                 Arrayww overlap = Matrixww::Zero(pows2(width - 1), width);
                 const int bulkspec = pows2(width - 2);
@@ -427,7 +463,7 @@ int main(int argc, char** argv) {
         };
         couplingsfor.loop(couplingsbody, fparams);
 
-        std::string label = hashlabel + "Ising_temptest_L_" + to_string(width)
+        std::string label = hashlabel + "Ising_windowtest_L_" + to_string(width)
                 + "_V_" + to_string(V)+"_f_"+to_string(f);
         if (WRITE_MEANS) {
             plotter.writeToFile(label + "_meanoverlap", fs, maxoverlap);
