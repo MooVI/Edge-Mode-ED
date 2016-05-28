@@ -5,7 +5,7 @@
  * Created on 13 October 2014, 11:54
  */
 
-#if 1
+#if 0
 
 #include<Eigen/Dense>
 #include<Eigen/MPRealSupport>
@@ -127,10 +127,12 @@ int main(int argc, char** argv) {
     const bool WRITE_PAIRED_EDIFFS = false;
     const bool WRITE_ALL_DECAY = false;
     const bool WRITE_PAIRED_DECAY = false;
+    const bool WRITE_ALL_LEVEL_SPACINGS = false;
+    const bool WRITE_MEAN_LEVEL_SPACINGS = true;
 
     const bool FINITE_TEMPERATURE = false;
     const bool FINITE_TEMPERATURE_LOOP = false;
-    const bool ENERGY_WINDOW_LOOP = true;
+    const bool ENERGY_WINDOW_LOOP = false;
 
 
     const bool CMD_LINE_PARAMS = false;
@@ -168,14 +170,14 @@ int main(int argc, char** argv) {
     NumMethod::GetXFor<mpreal> recordx;
     NumMethod::EqualSpaceFor couplingsfor;
     fparams.start = 0.0;
-    fparams.end = 3.5;
-    fparams.numPoints = 8;
+    fparams.end = 1.0;
+    fparams.numPoints = 200;
 
     if (CMD_LINE_PARAMS)
         fparams = NumMethod::get_for_from_cmd<mpreal>(argv);
 
 
-    std::vector<mpfr::mpreal> maxoverlap, eigdiffs, varoverlaps, vareigdiffs;
+    std::vector<mpfr::mpreal> maxoverlap, eigdiffs, varoverlaps, vareigdiffs, meanspacings;
     std::vector<mpreal> fs;
     couplingsfor.loop(recordx, fparams);
     fs = recordx.get_x();
@@ -235,7 +237,7 @@ int main(int argc, char** argv) {
             sigz2[i] = i % 4 < 2 ? 1 : -1;
         }
 
-        auto couplingsbody = [&](mpreal J2, int j) {
+        auto couplingsbody = [&](mpreal V, int j) {
             mpreal beta = 1.0/T;
             const mpreal Js [] = {J3, J4};
             std::vector<mpreal> J2s(width);
@@ -373,6 +375,27 @@ int main(int argc, char** argv) {
                 tfor.loop(tfunc, tparams);
                 plotter.writeToFile(label + "_paired_decay", ts, toverlaps);
             }
+            if (WRITE_ALL_LEVEL_SPACINGS or WRITE_MEAN_LEVEL_SPACINGS){
+                //Arrayw energies(pows2(width)-1);
+                //for (int i=0;i < pows2(width-1); i++){
+                    //energies[2*i] = eigsE[i];
+                    //energies[2*i+1] = eigsO[i];
+                //}
+                //std::sort(energies.data(), energies.data()+energies.size());
+                //Arrayw spacings = (energies.head(pows2(width)-1)-energies.tail(pows2(width)-1)).abs();
+                Arrayw spacings = (eigsE.array().head(pows2(width-1)-1)-eigsE.array().tail(pows2(width-1)-1)).abs();
+                Arrayw normspacings (pows2(width-1)-2);
+                for (int i=0; i< pows2(width-1)-2; i++){
+                    normspacings[i] = NumMethod::min(spacings[i], spacings[i+1])/NumMethod::max(spacings[i],spacings[i+1]);
+                   // normspacings[i] = spacings[i];
+                }
+                if (WRITE_ALL_LEVEL_SPACINGS){
+                    plotter.writeToFile(label + "_level_spacings", normspacings);
+                }
+                if (WRITE_MEAN_LEVEL_SPACINGS){
+                    meanspacings.push_back(normspacings.mean());
+                }
+            }
             if (FINITE_TEMPERATURE_LOOP){
                 Arrayw weights (pows2(width-1));
                 Arrayw mean_overlaps(Tparams.numPoints);
@@ -463,7 +486,7 @@ int main(int argc, char** argv) {
         };
         couplingsfor.loop(couplingsbody, fparams);
 
-        std::string label = hashlabel + "Ising_windowtest_L_" + to_string(width)
+        std::string label = hashlabel + "Ising_spacingtest_L_" + to_string(width)
                 + "_V_" + to_string(V)+"_f_"+to_string(f);
         if (WRITE_MEANS) {
             plotter.writeToFile(label + "_meanoverlap", fs, maxoverlap);
@@ -476,6 +499,10 @@ int main(int argc, char** argv) {
             plotter.writeToFile(label + "_varediff", fs, vareigdiffs);
             varoverlaps.clear();
             vareigdiffs.clear();
+        }
+        if (WRITE_MEAN_LEVEL_SPACINGS){
+            plotter.writeToFile(label + "_meanspacings", fs, meanspacings);
+            meanspacings.clear();
         }
         return false;
     };
