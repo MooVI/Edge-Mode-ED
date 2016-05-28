@@ -33,6 +33,7 @@
       <itemPath>length_ising.cpp</itemPath>
       <itemPath>parafermion.cpp</itemPath>
       <itemPath>parafermion_basis.cpp</itemPath>
+      <itemPath>/home/qfeuille/Storage/Programming/Oxford/TP11_1/parafermion_dists.cpp</itemPath>
       <itemPath>parafermion_mean.cpp</itemPath>
       <itemPath>parafermion_overlap.cpp</itemPath>
       <itemPath>timedecay_ising.cpp</itemPath>
@@ -71,7 +72,7 @@
           </linkerLibItems>
         </linkerTool>
       </compileType>
-      <item path="/home/qfeuille/Storage/Programming/Oxford/TP11_1/ising_kron_general.cpp"
+      <item path="/home/qfeuille/Storage/Programming/Oxford/TP11_1/parafermion_dists.cpp"
             ex="false"
             tool="1"
             flavor2="0">
@@ -105,6 +106,8 @@
       <item path="ising_extra_terms_dists.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="ising_kron_dists.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="ising_kron_general.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="kronecker_product.cpp" ex="false" tool="1" flavor2="0">
       </item>
@@ -161,7 +164,7 @@
           <commandLine>-lgmp -lmpfr -lyaml-cpp</commandLine>
         </linkerTool>
       </compileType>
-      <item path="/home/qfeuille/Storage/Programming/Oxford/TP11_1/ising_kron_general.cpp"
+      <item path="/home/qfeuille/Storage/Programming/Oxford/TP11_1/parafermion_dists.cpp"
             ex="false"
             tool="1"
             flavor2="0">
@@ -195,6 +198,8 @@
       <item path="ising_extra_terms_dists.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="ising_kron_dists.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="ising_kron_general.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="kronecker_product.cpp" ex="false" tool="1" flavor2="0">
       </item>
