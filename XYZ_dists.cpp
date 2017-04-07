@@ -129,9 +129,9 @@ int main(int argc, char** argv) {
     const bool WRITE_MAX_OVERLAPS = false;
     const bool WRITE_PAIRED_EDIFFS = false;
     const bool WRITE_STATE_DECAY = true;
-    const bool WRITE_ALL_DECAY = false;
+    const bool WRITE_ALL_DECAY = true;
     const bool WRITE_PAIRED_DECAY = false;
-    const bool WRITE_FINITE_T_DECAY = true;
+    const bool WRITE_FINITE_T_DECAY = false;
 
     const bool CMD_LINE_PARAMS = true;
 
@@ -144,7 +144,7 @@ int main(int argc, char** argv) {
     
     const mpreal Y = 0.0;
     const mpreal Z = 1.0;
-    const mpreal X = 0.25;
+    const mpreal X = 0.3;
     const mpreal stag = 0.0;
     const mpreal stagz = 0.0;
 
@@ -182,8 +182,8 @@ int main(int argc, char** argv) {
     std::vector<mpreal> ts;
     if (WRITE_ALL_DECAY | WRITE_PAIRED_DECAY | WRITE_STATE_DECAY | WRITE_FINITE_T_DECAY) {
         tparams.start = 0.01;
-        tparams.end = 1e10;
-        tparams.numPoints = 1000;
+        tparams.end = 1e8;
+        tparams.numPoints = 5000;
         tfor.loop(recordx, tparams);
         ts = recordx.get_x();
         recordx.clear();

@@ -98,6 +98,22 @@ inline int sigma_z_p_x_j_z_m(ulong x, ulong y, ulong p, ulong j, ulong m, powers
     *(2 * ((x & pows(m)) >> m) - 1);
 }
 
+
+template <int N>
+inline int sigma_y_j_y_m(ulong x, ulong y, ulong j, ulong m, powersoftwo<N> pows, const int width, const int ignoremask) {
+    return j == m ? (x==y ? 1 : 0)  :
+            ( 
+            (x == (y^pows(j)^pows(m)))
+            or
+            ( (j == width-1) and ((x | ignoremask) == ((~(y^pows(m))) | ignoremask)))
+            or
+            ( (m == width-1) and ((x | ignoremask) == ((~(y^pows(j))) | ignoremask)))
+            )*(-2 * ((pows(j) & y & pows(width-1)) >> (width-1)) + 1)
+             *(-2 * ((pows(m) & y & pows(width-1)) >> (width-1)) + 1)
+             *(2*(((y & pows(j)) >> j) ^ ((y & pows(m)) >> m))-1);
+}
+
+
 template<typename T>
 std::string to_string(T value) {
   return std::to_string(value);
@@ -121,7 +137,7 @@ int main(int argc, char** argv) {
   const bool FAKE_BCS = false;
   const bool FAKE_END_GAMMA = false;
 
-  const bool X1_Z2_EDGE = true;
+  const bool X1_Z2_EDGE = false;
 
   const bool WRITE_ENERGIES = false;
   const bool WRITE_OVERLAPS = false;
@@ -134,9 +150,11 @@ int main(int argc, char** argv) {
   const bool WRITE_PAIRED_DECAY = false;
   const bool WRITE_ALL_LEVEL_SPACINGS = false;
   const bool WRITE_MEAN_LEVEL_SPACINGS = false;
+  const bool WRITE_CORR = false;
+  const bool WRITE_BULK_DECAY = true;
 
   const bool WRITE_FINITE_T_DECAY = false;
-  const bool WRITE_STATE_DECAY = true;
+  const bool WRITE_STATE_DECAY = false;
 
   const bool FINITE_TEMPERATURE = false;
   const bool FINITE_TEMPERATURE_LOOP = false;
@@ -157,9 +175,10 @@ int main(int argc, char** argv) {
   const mpreal mag = 0.0;
   const mpreal J2 = 0.0;
   const mpreal J3 = 0.0;
-  const mpreal J4 = 1.0;
-  const mpreal J = 0.0;
-  const mpreal f = 0.05;
+  const mpreal J4 = 0.0;
+  const mpreal Jy = 0.0;
+  const mpreal J = 1.0;
+  const mpreal f = 0.4;
   const mpreal f_fake_end = 10;
   const mpreal V = 0.05;
   const mpreal Js [] = {J3, J4};
@@ -188,7 +207,7 @@ int main(int argc, char** argv) {
     fparams = NumMethod::get_for_from_cmd<mpreal>(argv);
 
 
-  std::vector<mpfr::mpreal> maxoverlap, eigdiffs, varoverlaps, vareigdiffs, meanspacings;
+  std::vector<mpfr::mpreal> maxoverlap, eigdiffs, varoverlaps, vareigdiffs, meanspacings, correlations;
   std::vector<mpreal> fs;
   couplingsfor.loop(recordx, fparams);
   fs = recordx.get_x();
@@ -198,9 +217,9 @@ int main(int argc, char** argv) {
   NumMethod::LogFor tfor;
   NumMethod::ForLoopParams<mpreal> tparams;
   std::vector<mpreal> ts;
-  if (WRITE_ALL_DECAY | WRITE_PAIRED_DECAY | WRITE_FINITE_T_DECAY | WRITE_STATE_DECAY) {
+  if (WRITE_ALL_DECAY | WRITE_PAIRED_DECAY | WRITE_FINITE_T_DECAY | WRITE_STATE_DECAY | WRITE_BULK_DECAY) {
     tparams.start = 0.1;
-    tparams.end = 1e10;
+    tparams.end = 1e8;
     tparams.numPoints = 5001;
     tfor.loop(recordx, tparams);
     ts = recordx.get_x();
@@ -249,10 +268,10 @@ int main(int argc, char** argv) {
       sigz2[i] = i % 4 < 2 ? 1 : -1;
     }
 
-    auto couplingsbody = [&](mpreal J3, int j) {
+    auto couplingsbody = [&](mpreal V, int j) {
       // mpreal f = mag*cos(theta);
       //mpreal V = mag*sin(theta);
-      mpreal f = V; //XXXXXX notice this!
+      mpreal f = 1.5*V; //XXXXXX notice this!
       mpreal beta = 1.0/T;
       const mpreal Js [] = {J3, J4};
       std::vector<mpreal> J2s(width);
@@ -272,11 +291,13 @@ int main(int argc, char** argv) {
 		- J * sigma_z_j_z_m(i, j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
 		- J2s[jsite] * sigma_z_j_z_m(i, j, jsite, jsite + 2, pows2)*(((jsite + 2) < width))
 		- V * sigma_x_j_x_m(i, j, jsite, jsite + 1, pows2, width, ignoremask)*((jsite + 2) < width)
+		- Jy * sigma_y_j_y_m(i, j, jsite, jsite + 1, pows2, width, ignoremask)*((jsite + 2) < width)
 		- Js[jsite % 2] * sigma_z_p_x_j_z_m(i, j, jsite, jsite + 1, jsite + 2, pows2, width, ignoremask)*(((jsite + 2) < width));
 	      HO(i, j) += -f * sigma_x_j(~i, ~j, jsite, pows2, width, ignoremask)*(((jsite + 1) < width))
 		- J * sigma_z_j_z_m(~i, ~j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
 		- J2s[jsite] * sigma_z_j_z_m(~i, ~j, jsite, jsite + 2, pows2)*(((jsite + 2) < width))
 		- V * sigma_x_j_x_m(~i, ~j, jsite, jsite + 1, pows2, width, ignoremask)*((jsite + 2) < width)
+		- Jy * sigma_y_j_y_m(~i, ~j, jsite, jsite + 1, pows2, width, ignoremask)*((jsite + 2) < width)
 		- Js[jsite % 2] * sigma_z_p_x_j_z_m(~i, ~j, jsite, jsite + 1, jsite + 2, pows2, width, ignoremask)*(((jsite + 2) < width));
 	    }
 	  }
@@ -290,12 +311,14 @@ int main(int argc, char** argv) {
 	      - J * sigma_z_j_z_m(i, j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
 	      - J2s[jsite] * sigma_z_j_z_m(i, j, jsite, jsite + 2, pows2)*(((jsite + 2) < width))
 	      - V * sigma_x_j_x_m(i, j, jsite, jsite + 1, pows2, width, ignoremask)*((jsite + 1) < width)
+	      - Jy * sigma_y_j_y_m(i, j, jsite, jsite + 1, pows2, width, ignoremask)*((jsite + 2) < width)
 	      - Js[jsite % 2] * sigma_z_p_x_j_z_m(i, j, jsite, jsite + 1, jsite + 2, pows2, width, ignoremask)*(((jsite + 2) < width));
 	      
 	      HO(i, j) += -f * sigma_x_j(~i, ~j, jsite, pows2, width, ignoremask)
 	      - J * sigma_z_j_z_m(~i, ~j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
 	      - J2s[jsite] * sigma_z_j_z_m(~i, ~j, jsite, jsite + 2, pows2)*(((jsite + 2) < width))
 	      - V * sigma_x_j_x_m(~i, ~j, jsite, jsite + 1, pows2, width, ignoremask)*((jsite + 1) < width)
+	      - Jy * sigma_y_j_y_m(~i, ~j, jsite, jsite + 1, pows2, width, ignoremask)*((jsite + 2) < width)
 	      - Js[jsite % 2] * sigma_z_p_x_j_z_m(~i, ~j, jsite, jsite + 1, jsite + 2, pows2, width, ignoremask)*(((jsite + 2) < width));
 	     
 	    }
@@ -312,11 +335,13 @@ int main(int argc, char** argv) {
 	      - J * sigma_z_j_z_m(i, j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
 	      - J2s[jsite] * sigma_z_j_z_m(i, j, jsite, jsite + 2, pows2)*(((jsite + 2) < width))
 	      - V * sigma_x_j_x_m(i, j, jsite, jsite + 1, pows2, width, ignoremask)*((jsite + 1) < width)
+	      - Jy * sigma_y_j_y_m(i, j, jsite, jsite + 1, pows2, width, ignoremask)*((jsite + 2) < width)
 	      - Js[jsite % 2] * sigma_z_p_x_j_z_m(i, j, jsite, jsite + 1, jsite + 2, pows2, width, ignoremask)*(((jsite + 2) < width));
 	      HO(i, j) += -f * sigma_x_j(~i, ~j, jsite, pows2, width, ignoremask)
 	      - J * sigma_z_j_z_m(~i, ~j, jsite, jsite + 1, pows2)*(((jsite + 1) < width))
 	      - J2s[jsite] * sigma_z_j_z_m(~i, ~j, jsite, jsite + 2, pows2)*(((jsite + 2) < width))
 	      - V * sigma_x_j_x_m(~i, ~j, jsite, jsite + 1, pows2, width, ignoremask)*((jsite + 1) < width)
+	      - Jy * sigma_y_j_y_m(~i, ~j, jsite, jsite + 1, pows2, width, ignoremask)*((jsite + 2) < width)
 	      - Js[jsite % 2] * sigma_z_p_x_j_z_m(~i, ~j, jsite, jsite + 1, jsite + 2, pows2, width, ignoremask)*(((jsite + 2) < width));
 	    }
 	  }
@@ -332,8 +357,8 @@ int main(int argc, char** argv) {
       auto evecsE = esE.eigenvectors();
       auto evecsO = esO.eigenvectors();
       mpreal partE;
-      std::string label = "Chris_x1z2_verylongdecay_L_" + to_string(width) + "_f_" + to_string(f)
-      + "_V_" + to_string(V)+ "_J3_" + to_string(J3) + "_J4_" + to_string(J4);
+      std::string label = "Ising_decayfit_L_" + to_string(width) + "_f_" + to_string(f)
+      + "_V_" + to_string(V);
 
       std::ofstream outEs;
       if (WRITE_ENERGIES)
@@ -343,7 +368,8 @@ int main(int argc, char** argv) {
 	  evecsO.row(2*i).swap(evecsO.row(2*i+1));
 	}
       }
-      if (WRITE_OVERLAPS or WRITE_ALL_DECAY or WRITE_FINITE_T_DECAY or WRITE_STATE_DECAY) {
+      if (WRITE_OVERLAPS or WRITE_ALL_DECAY or WRITE_FINITE_T_DECAY
+	  or WRITE_STATE_DECAY) {
 	Arrayww overlap = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
 	for (int ispec = 0; ispec < pows2(width - 1); ispec++) {
 	  auto spec = evecsE.col(ispec).array();
@@ -574,6 +600,47 @@ int main(int argc, char** argv) {
 	  outoverlaps.close();
 	}
       }
+      if (WRITE_BULK_DECAY){
+	Arrayww overlap = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
+	Arrayw sigzmid(pows2(width - 1));
+	for (int i = 0; i < sigzmid.size(); i++) {
+	  sigzmid[i] = (2 * ((i & pows2(width-2)) >> width) - 1);
+	}
+	for (int ispec = 0; ispec < pows2(width - 1); ispec++) {
+	  auto spec = evecsE.col(ispec).array();
+	  for (int i = 0; i < pows2(width-1); i++) {
+	    overlap(i, ispec) = (spec * sigzmid * evecsE.col(i).array()).sum();
+	  }
+	}
+	Arrayw toverlaps(tparams.numPoints);
+	overlap = overlap.array().square();
+	Arrayww alleigdiff(pows2(width - 1), pows2(width - 1));
+	for (ulong i = 0; i < pows2(width - 1); i++) {
+	  for (ulong j = 0; j < pows2(width - 1); j++) {
+	    alleigdiff(i, j) = eigsE[j] - eigsO[i];
+	  }
+	}
+	auto tfunc = [&](mpreal t, int j) {
+	  toverlaps[j] = ((overlap.array() * alleigdiff.unaryExpr([ = ](mpreal x){return cos(x * t);})).sum() / (mpreal) pows2(width - 1));
+	  return false;
+	};
+	tfor.loop(tfunc, tparams);
+	plotter.writeToFile(label + "_bulk_decay", ts, toverlaps);
+      }
+      if (WRITE_CORR){
+	Arrayww overlap = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
+	Arrayw sigz1xL(pows2(width - 1));
+	for (int i = 0; i < sigz1xL.size(); i++) {
+	    sigz1xL[i] = (2 * ((i & pows2(width-1)) >> width) - 1)*sigz[i];
+	  }
+	for (int ispec = 0; ispec < pows2(width - 1); ispec++) {
+	  auto spec = evecsE.col(ispec).array();
+	  for (int i = 0; i < pows2(width-1); i++) {
+	      overlap(i, ispec) = (spec * sigz1xL * evecsE.col(i).array()).sum();
+	    }
+	}
+	correlations.push_back(overlap.mean());
+      }
       if (WRITE_MEANS) {
 	if (FINITE_TEMPERATURE){
 	  maxoverlap.push_back(wstatoverlap.Mean());
@@ -602,8 +669,8 @@ int main(int argc, char** argv) {
     };
     couplingsfor.loop(couplingsbody, fparams);
 
-    std::string label = hashlabel + "Ising_mirror2_L_" + to_string(width)
-    + "_f_" + to_string(f);
+    std::string label = hashlabel + "Ising_fake_bcs_V_f_L_" + to_string(width);
+    //+ "_f_" + to_string(f);
     if (WRITE_MEANS) {
       plotter.writeToFile(label + "_meanoverlap", fs, maxoverlap);
       plotter.writeToFile(label + "_meanediff", fs, eigdiffs);
@@ -620,6 +687,10 @@ int main(int argc, char** argv) {
       plotter.writeToFile(label + "_meanspacings", fs, meanspacings);
       meanspacings.clear();
     }
+    if (WRITE_CORR){
+      plotter.writeToFile(label + "_corr", fs, correlations);
+      correlations.clear();
+    }
     return false;
   };
 
@@ -631,3 +702,4 @@ int main(int argc, char** argv) {
 
 }
 #endif
+
