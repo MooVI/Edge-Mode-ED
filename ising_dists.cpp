@@ -136,6 +136,7 @@ int main(int argc, char** argv) {
 
   const bool FAKE_BCS = false;
   const bool FAKE_END_GAMMA = false;
+  const bool LONG_RANGE = true;
 
   const bool X1_Z2_EDGE = false;
 
@@ -146,12 +147,13 @@ int main(int argc, char** argv) {
   const bool WRITE_VARS = false;
   const bool WRITE_MAX_OVERLAPS = false;
   const bool WRITE_PAIRED_EDIFFS = false;
-  const bool WRITE_ALL_DECAY = true;
+  const bool WRITE_ALL_DECAY = false;
   const bool WRITE_PAIRED_DECAY = false;
   const bool WRITE_ALL_LEVEL_SPACINGS = false;
   const bool WRITE_MEAN_LEVEL_SPACINGS = false;
   const bool WRITE_CORR = false;
-  const bool WRITE_BULK_DECAY = true;
+  const bool WRITE_BULK_DECAY = false;
+  const bool WRITE_ALL_SPIN_DECAYS = true;
 
   const bool WRITE_FINITE_T_DECAY = false;
   const bool WRITE_STATE_DECAY = false;
@@ -178,9 +180,10 @@ int main(int argc, char** argv) {
   const mpreal J4 = 0.0;
   const mpreal Jy = 0.0;
   const mpreal J = 1.0;
-  const mpreal f = 0.4;
+  const mpreal f = 0.2;
   const mpreal f_fake_end = 10;
-  const mpreal V = 0.05;
+  const mpreal V = 0.00;
+  const mpreal alpha = 0;
   const mpreal Js [] = {J3, J4};
 
   const mpreal T = 0.1;
@@ -217,7 +220,7 @@ int main(int argc, char** argv) {
   NumMethod::LogFor tfor;
   NumMethod::ForLoopParams<mpreal> tparams;
   std::vector<mpreal> ts;
-  if (WRITE_ALL_DECAY | WRITE_PAIRED_DECAY | WRITE_FINITE_T_DECAY | WRITE_STATE_DECAY | WRITE_BULK_DECAY) {
+  if (WRITE_ALL_DECAY | WRITE_PAIRED_DECAY | WRITE_FINITE_T_DECAY | WRITE_STATE_DECAY | WRITE_BULK_DECAY | WRITE_ALL_SPIN_DECAYS) {
     tparams.start = 0.1;
     tparams.end = 1e8;
     tparams.numPoints = 5001;
@@ -249,6 +252,7 @@ int main(int argc, char** argv) {
     Es = recordx.get_x();
     recordx.clear();
   }
+  
     
   auto body = [&](int width, int i) {
 
@@ -268,10 +272,10 @@ int main(int argc, char** argv) {
       sigz2[i] = i % 4 < 2 ? 1 : -1;
     }
 
-    auto couplingsbody = [&](mpreal V, int j) {
+    auto couplingsbody = [&](mpreal alpha, int j) {
       // mpreal f = mag*cos(theta);
       //mpreal V = mag*sin(theta);
-      mpreal f = 1.5*V; //XXXXXX notice this!
+      //mpreal f = 1*V; //XXXXXX notice this!
       mpreal beta = 1.0/T;
       const mpreal Js [] = {J3, J4};
       std::vector<mpreal> J2s(width);
@@ -327,6 +331,22 @@ int main(int argc, char** argv) {
 	  }
 	}
       }
+      else if (LONG_RANGE){
+	for (ulong i = 0; i < pows2(width - 1); i++) {
+	  for (ulong j = 0; j < pows2(width - 1); j++) {
+	    for (ulong jsite = 0; jsite < width; jsite++) {
+	      HE(i, j) += -f * sigma_x_j(i, j, jsite, pows2, width, ignoremask)
+	      - V * sigma_x_j_x_m(i, j, jsite, jsite + 1, pows2, width, ignoremask)*((jsite + 1) < width);
+	      HO(i, j) += -f * sigma_x_j(~i, ~j, jsite, pows2, width, ignoremask)
+	      - V * sigma_x_j_x_m(~i, ~j, jsite, jsite + 1, pows2, width, ignoremask)*((jsite + 1) < width);
+	      for (ulong r = width-1-jsite; r > 0; r--){
+		HE(i, j) += - J * pow((mpreal) r, -alpha)*sigma_z_j_z_m(i, j, jsite, jsite + r, pows2);
+		HO(i, j) += - J * pow((mpreal) r, -alpha)*sigma_z_j_z_m(~i, ~j, jsite, jsite + r, pows2);
+	      }
+	    }
+	  }
+	}
+      }
       else {
 	for (ulong i = 0; i < pows2(width - 1); i++) {
 	  for (ulong j = 0; j < pows2(width - 1); j++) {
@@ -357,8 +377,8 @@ int main(int argc, char** argv) {
       auto evecsE = esE.eigenvectors();
       auto evecsO = esO.eigenvectors();
       mpreal partE;
-      std::string label = "Ising_decayfit_L_" + to_string(width) + "_f_" + to_string(f)
-      + "_V_" + to_string(V);
+      std::string label = "Ising_L_" + to_string(width) + "_f_" + to_string(f)
+      + "_alpha_" + to_string(alpha);
 
       std::ofstream outEs;
       if (WRITE_ENERGIES)
@@ -604,12 +624,12 @@ int main(int argc, char** argv) {
 	Arrayww overlap = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
 	Arrayw sigzmid(pows2(width - 1));
 	for (int i = 0; i < sigzmid.size(); i++) {
-	  sigzmid[i] = (2 * ((i & pows2(width-2)) >> width) - 1);
+	  sigzmid[i] = (2 * ((i & pows2(width/2)) >> (width/2)) - 1);
 	}
 	for (int ispec = 0; ispec < pows2(width - 1); ispec++) {
 	  auto spec = evecsE.col(ispec).array();
 	  for (int i = 0; i < pows2(width-1); i++) {
-	    overlap(i, ispec) = (spec * sigzmid * evecsE.col(i).array()).sum();
+	    overlap(i, ispec) = (spec * sigzmid * evecsO.col(i).array()).sum();
 	  }
 	}
 	Arrayw toverlaps(tparams.numPoints);
@@ -626,6 +646,34 @@ int main(int argc, char** argv) {
 	};
 	tfor.loop(tfunc, tparams);
 	plotter.writeToFile(label + "_bulk_decay", ts, toverlaps);
+      }if (WRITE_ALL_SPIN_DECAYS){
+	Arrayww alleigdiff(pows2(width - 1), pows2(width - 1));
+	for (ulong i = 0; i < pows2(width - 1); i++) {
+	  for (ulong j = 0; j < pows2(width - 1); j++) {
+	    alleigdiff(i, j) = eigsE[j] - eigsO[i];
+	  }
+	}
+	Arrayww overlap = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
+	Arrayw sigzmid(pows2(width - 1));
+	Arrayw toverlaps(tparams.numPoints);
+	for (int jsite=0; jsite < (width/2)+1; jsite++){
+	  for (int i = 0; i < sigzmid.size(); i++) {
+	    sigzmid[i] = (2 * ((i & pows2(jsite)) >> jsite) - 1);
+	  }
+	  for (int ispec = 0; ispec < pows2(width - 1); ispec++) {
+	    auto spec = evecsE.col(ispec).array();
+	    for (int i = 0; i < pows2(width-1); i++) {
+	      overlap(i, ispec) = (spec * sigzmid * evecsO.col(i).array()).sum();
+	    }
+	  }
+	  overlap = overlap.array().square();
+	  auto tfunc = [&](mpreal t, int j) {
+	    toverlaps[j] = ((overlap.array() * alleigdiff.unaryExpr([ = ](mpreal x){return cos(x * t);})).sum() / (mpreal) pows2(width - 1));
+	    return false;
+	  };
+	  tfor.loop(tfunc, tparams);
+	  plotter.writeToFile(label + "_spin_"+to_string(jsite)+"_decay", ts, toverlaps);
+	}
       }
       if (WRITE_CORR){
 	Arrayww overlap = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
