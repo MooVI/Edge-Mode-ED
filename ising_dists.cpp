@@ -153,10 +153,12 @@ int main(int argc, char** argv) {
   const bool WRITE_MEAN_LEVEL_SPACINGS = false;
   const bool WRITE_CORR = false;
   const bool WRITE_BULK_DECAY = false;
-  const bool WRITE_ALL_SPIN_DECAYS = true;
+  const bool WRITE_FINITE_T_BULK_DECAY = true;
+  const bool WRITE_BULK_STATE_DECAY = true;
+  const bool WRITE_ALL_SPIN_DECAYS = false;
 
-  const bool WRITE_FINITE_T_DECAY = false;
-  const bool WRITE_STATE_DECAY = false;
+  const bool WRITE_FINITE_T_DECAY = true;
+  const bool WRITE_STATE_DECAY = true;
 
   const bool FINITE_TEMPERATURE = false;
   const bool FINITE_TEMPERATURE_LOOP = false;
@@ -233,9 +235,9 @@ int main(int argc, char** argv) {
   NumMethod::ForLoopParams<mpreal> Tparams;
   std::vector<mpreal> Ts;
   if (FINITE_TEMPERATURE_LOOP | WRITE_FINITE_T_DECAY) {
-    Tparams.start = 0.05;
-    Tparams.end = 9.05;
-    Tparams.numPoints = 10;
+    Tparams.start = 0.25;
+    Tparams.end = 2.00;
+    Tparams.numPoints = 8;
     Tfor.loop(recordx, Tparams);
     Ts = recordx.get_x();
     recordx.clear();
@@ -620,8 +622,9 @@ int main(int argc, char** argv) {
 	  outoverlaps.close();
 	}
       }
-      if (WRITE_BULK_DECAY){
-	Arrayww overlap = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
+      Arrayww overlap;
+      if (WRITE_BULK_DECAY or WRITE_FINITE_T_BULK_DECAY or WRITE_BULK_STATE_DECAY){
+	overlap = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
 	Arrayw sigzmid(pows2(width - 1));
 	for (int i = 0; i < sigzmid.size(); i++) {
 	  sigzmid[i] = (2 * ((i & pows2(width/2)) >> (width/2)) - 1);
@@ -632,6 +635,8 @@ int main(int argc, char** argv) {
 	    overlap(i, ispec) = (spec * sigzmid * evecsO.col(i).array()).sum();
 	  }
 	}
+      }
+      if (WRITE_BULK_DECAY){
 	Arrayw toverlaps(tparams.numPoints);
 	overlap = overlap.array().square();
 	Arrayww alleigdiff(pows2(width - 1), pows2(width - 1));
@@ -646,7 +651,52 @@ int main(int argc, char** argv) {
 	};
 	tfor.loop(tfunc, tparams);
 	plotter.writeToFile(label + "_bulk_decay", ts, toverlaps);
-      }if (WRITE_ALL_SPIN_DECAYS){
+      }
+      if (WRITE_BULK_STATE_DECAY){
+	  Arrayw toverlaps (tparams.numPoints);
+	  Arrayw stateoverlap = overlap.row(tstate).array().square();
+	  Arrayw alleigdiff(pows2(width-1));
+	  for (ulong i = 0; i < pows2(width - 1); i++) {
+	    alleigdiff[i] = eigsE[tstate] - eigsO[i];
+	  }
+	  auto tfunc = [&](mpreal t, int j) {
+	    toverlaps[j] = ((stateoverlap*alleigdiff.unaryExpr([ = ](mpreal x){return cos(x * t);}))).sum();
+	    return false;
+	  };
+	  tfor.loop(tfunc, tparams);
+	  plotter.writeToFile(label+"_state_"+to_string(tstate)+"_bulk_decay", ts, toverlaps);
+      }
+      if (WRITE_FINITE_T_BULK_DECAY) {
+	//Not the fastest way of doing it (could coalesce with other finite t decay)
+	Arrayw toverlaps(tparams.numPoints);
+	if (not WRITE_BULK_DECAY){
+	  overlap = overlap.array().square();
+	}
+	auto Tfunc = [&](mpreal T, int j) {
+	  Arrayww alleigdiff(pows2(width - 1), pows2(width - 1));
+	  Arrayw eweights(pows2(width - 1)); 
+	  for (ulong i = 0; i < pows2(width - 1); i++) {
+	    eweights(i) = exp(-eigsE[i]/T) + exp(-eigsO[i]/T);
+	    for (ulong j = 0; j < pows2(width - 1); j++) {
+	      alleigdiff(i, j) = eigsE[j] - eigsO[i];
+	    }
+	  }
+	  mpreal zdenom = eweights.sum();
+	  auto tfunc = [&](mpreal t, int j) {
+	    toverlaps[j] = (((overlap.array()
+			      * alleigdiff.unaryExpr([ = ](mpreal x){return cos(x * t);})).colwise().sum().transpose()
+			     *eweights
+			     ).sum())
+	    / (mpreal) zdenom;
+	    return false;
+	  };
+	  tfor.loop(tfunc, tparams);
+	  plotter.writeToFile(label +"_T_"+to_string(T)+ "_bulk_decay", ts, toverlaps);
+	  return false;
+	};
+	Tfor.loop(Tfunc, Tparams);		  
+      }
+      if (WRITE_ALL_SPIN_DECAYS){
 	Arrayww alleigdiff(pows2(width - 1), pows2(width - 1));
 	for (ulong i = 0; i < pows2(width - 1); i++) {
 	  for (ulong j = 0; j < pows2(width - 1); j++) {
