@@ -51,6 +51,7 @@ OBJECTFILES= \
 	${OBJECTDIR}/ising_extra_terms_dists.o \
 	${OBJECTDIR}/ising_kron_dists.o \
 	${OBJECTDIR}/ising_kron_general.o \
+	${OBJECTDIR}/kit_hubbard.o \
 	${OBJECTDIR}/kronecker_product.o \
 	${OBJECTDIR}/length_XYZ.o \
 	${OBJECTDIR}/length_ising.o \
@@ -66,8 +67,8 @@ OBJECTFILES= \
 CFLAGS=
 
 # CC Compiler Flags
-CCFLAGS=-m64 -lmpfr -lgmp -march=native -Ofast -pthread
-CXXFLAGS=-m64 -lmpfr -lgmp -march=native -Ofast -pthread
+CCFLAGS=-m64 -lmpfr -lgmp -march=native -Ofast -pthread -Wno-ignored-attributes
+CXXFLAGS=-m64 -lmpfr -lgmp -march=native -Ofast -pthread -Wno-ignored-attributes
 
 # Fortran Compiler Flags
 FFLAGS=
@@ -169,6 +170,11 @@ ${OBJECTDIR}/ising_kron_general.o: ising_kron_general.cpp
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
 	$(COMPILE.cc) -I../.. -I.. -I$$HOME/include -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/ising_kron_general.o ising_kron_general.cpp
+
+${OBJECTDIR}/kit_hubbard.o: kit_hubbard.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} "$@.d"
+	$(COMPILE.cc) -I../.. -I.. -I$$HOME/include -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/kit_hubbard.o kit_hubbard.cpp
 
 ${OBJECTDIR}/kronecker_product.o: kronecker_product.cpp 
 	${MKDIR} -p ${OBJECTDIR}

@@ -160,7 +160,7 @@ int main(int argc, char** argv) {
     NumMethod::WeightedRunningStats<mpfr::mpreal> wstatoverlap, wstateigdiff;
 
     const int begin = 8;
-    const int end = 11;
+    const int end = 13;
 
     std::string hashlabel = "";
     if (CMD_LINE_PARAMS and argc > 4)
@@ -170,8 +170,8 @@ int main(int argc, char** argv) {
     NumMethod::GetXFor<mpreal> recordx;
     NumMethod::EqualSpaceFor couplingsfor;
     fparams.start = 0.0;
-    fparams.end = 1.0;
-    fparams.numPoints = 200;
+    fparams.end = 1.5;
+    fparams.numPoints = 100;
 
     if (CMD_LINE_PARAMS)
         fparams = NumMethod::get_for_from_cmd<mpreal>(argv);
@@ -237,7 +237,7 @@ int main(int argc, char** argv) {
             sigz2[i] = i % 4 < 2 ? 1 : -1;
         }
 
-        auto couplingsbody = [&](mpreal V, int j) {
+        auto couplingsbody = [&](mpreal f, int j) {
             mpreal beta = 1.0/T;
             const mpreal Js [] = {J3, J4};
             std::vector<mpreal> J2s(width);
@@ -486,8 +486,8 @@ int main(int argc, char** argv) {
         };
         couplingsfor.loop(couplingsbody, fparams);
 
-        std::string label = hashlabel + "Ising_spacingtest_L_" + to_string(width)
-                + "_V_" + to_string(V)+"_f_"+to_string(f);
+        std::string label = hashlabel + "Ising_pure_L_" + to_string(width)
+                ;//+ "_V_" + to_string(V)+"_f_"+to_string(f);
         if (WRITE_MEANS) {
             plotter.writeToFile(label + "_meanoverlap", fs, maxoverlap);
             plotter.writeToFile(label + "_meanediff", fs, eigdiffs);

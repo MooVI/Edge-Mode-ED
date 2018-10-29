@@ -28,6 +28,7 @@
       <itemPath>ising_extra_terms_dists.cpp</itemPath>
       <itemPath>ising_kron_dists.cpp</itemPath>
       <itemPath>ising_kron_general.cpp</itemPath>
+      <itemPath>kit_hubbard.cpp</itemPath>
       <itemPath>kronecker_product.cpp</itemPath>
       <itemPath>length_XYZ.cpp</itemPath>
       <itemPath>length_ising.cpp</itemPath>
@@ -104,6 +105,8 @@
       </item>
       <item path="ising_kron_general.cpp" ex="false" tool="1" flavor2="0">
       </item>
+      <item path="kit_hubbard.cpp" ex="false" tool="1" flavor2="0">
+      </item>
       <item path="kronecker_product.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="length_XYZ.cpp" ex="false" tool="1" flavor2="0">
@@ -142,7 +145,7 @@
             <pElem>..</pElem>
             <pElem>$$HOME/include</pElem>
           </incDir>
-          <commandLine>-lmpfr -lgmp -march=native -Ofast -pthread</commandLine>
+          <commandLine>-lmpfr -lgmp -march=native -Ofast -pthread -Wno-ignored-attributes</commandLine>
         </ccTool>
         <fortranCompilerTool>
           <developmentMode>5</developmentMode>
@@ -192,6 +195,8 @@
       <item path="ising_kron_dists.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="ising_kron_general.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="kit_hubbard.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="kronecker_product.cpp" ex="false" tool="1" flavor2="0">
       </item>

@@ -5,7 +5,7 @@
  * Created on 13 October 2014, 11:54
  */
 
-#if 1
+#if 0
 
 #include<Eigen/Dense>
 #include<Eigen/MPRealSupport>
@@ -233,14 +233,14 @@ int main(int argc, char** argv) {
     typedef Eigen::Array<mpreal, Eigen::Dynamic, 1> Arrayw;
     typedef Eigen::Array<mpreal, Eigen::Dynamic, Eigen::Dynamic> Arrayww;
 
-    const double phi = pi / 5;
-    const double theta = pi / 6;
+    const double phi = 0.23;
+    const double theta = 0.4; //pi / 6;
     complex ephi = std::polar(1., phi);
     complex mephi = std::polar(1., -phi);
     complex eth = std::polar(1., theta);
     complex meth = std::polar(1., -theta);
     const double J = 1.0;
-    const double f = 0.01;
+    const double f = 0.05;
     
     const double T =0;
 
