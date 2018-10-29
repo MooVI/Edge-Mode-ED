@@ -224,7 +224,7 @@ int main(int argc, char** argv) {
     const bool ENERGY_WINDOW_LOOP = false;
 
 
-    const bool CMD_LINE_PARAMS = false;
+    const bool CMD_LINE_PARAMS = true;
 
 
     typedef Eigen::Matrix<complex, Eigen::Dynamic, Eigen::Dynamic> Matrixww;
@@ -247,8 +247,8 @@ int main(int argc, char** argv) {
     NumMethod::RunningStats<mpfr::mpreal> statoverlap, stateigdiff;
     NumMethod::WeightedRunningStats<mpfr::mpreal> wstatoverlap, wstateigdiff;
 
-    const int begin = 6;
-    const int end = 8;
+    const int begin = 9;
+    const int end = 10;
 
     std::string hashlabel = "";
     if (CMD_LINE_PARAMS and argc > 4)

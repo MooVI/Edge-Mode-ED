@@ -134,7 +134,7 @@ int main(int argc, char** argv) {
 
     
     const bool WRITE_ENERGIES = false;
-    const bool PERIODIC = true;
+    const bool PERIODIC = false;
     
     const bool CMD_LINE_PARAMS = false;
 
@@ -285,6 +285,7 @@ int main(int argc, char** argv) {
     plotter.writeToFile(label + "_genergy", fs, genergy);
     plotter.writeToFile(label + "_gaps", fs, gaps);
     plotter.writeToFile(label + "_corrs", fs, corrs);
+   // plotter.writeToFile(label + "_corrsX", fs, corrsX);
         return false;
     };
 

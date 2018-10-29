@@ -128,10 +128,12 @@ int main(int argc, char** argv) {
     const bool WRITE_VARS = false;
     const bool WRITE_MAX_OVERLAPS = false;
     const bool WRITE_PAIRED_EDIFFS = false;
+    const bool WRITE_STATE_DECAY = true;
     const bool WRITE_ALL_DECAY = true;
-    const bool WRITE_PAIRED_DECAY = true;
+    const bool WRITE_PAIRED_DECAY = false;
+    const bool WRITE_FINITE_T_DECAY = false;
 
-    const bool CMD_LINE_PARAMS = false;
+    const bool CMD_LINE_PARAMS = true;
 
 
     typedef Eigen::Matrix<mpreal, Eigen::Dynamic, Eigen::Dynamic> Matrixww;
@@ -142,15 +144,15 @@ int main(int argc, char** argv) {
     
     const mpreal Y = 0.0;
     const mpreal Z = 1.0;
-    const mpreal X = 0.05;
+    const mpreal X = 0.3;
     const mpreal stag = 0.0;
     const mpreal stagz = 0.0;
 
     NumMethod::RunningStats<mpfr::mpreal> statoverlap, stateigdiff;
 
 
-    const int begin = 12;
-    const int end = 13;
+    const int begin = 8;
+    const int end = 15;
 
     std::string hashlabel = "";
     if (CMD_LINE_PARAMS and argc > 4)
@@ -173,15 +175,29 @@ int main(int argc, char** argv) {
     fs = recordx.get_x();
     recordx.clear();
 
+
+    const int tstate = 0;
     NumMethod::LogFor tfor;
     NumMethod::ForLoopParams<mpreal> tparams;
     std::vector<mpreal> ts;
-    if (WRITE_ALL_DECAY | WRITE_PAIRED_DECAY) {
+    if (WRITE_ALL_DECAY | WRITE_PAIRED_DECAY | WRITE_STATE_DECAY | WRITE_FINITE_T_DECAY) {
         tparams.start = 0.01;
-        tparams.end = 1e6;
-        tparams.numPoints = 1000;
+        tparams.end = 1e8;
+        tparams.numPoints = 5000;
         tfor.loop(recordx, tparams);
         ts = recordx.get_x();
+        recordx.clear();
+    }
+
+    NumMethod::EqualSpaceFor Tfor;
+    NumMethod::ForLoopParams<mpreal> Tparams;
+    std::vector<mpreal> Ts;
+    if (WRITE_FINITE_T_DECAY) {
+        Tparams.start = 0.05;
+        Tparams.end = 10.05;
+        Tparams.numPoints = 11;
+        Tfor.loop(recordx, Tparams);
+        Ts = recordx.get_x();
         recordx.clear();
     }
 
@@ -204,6 +220,7 @@ int main(int argc, char** argv) {
         }
 
         auto couplingsbody = [&](mpreal Y, int j) {
+	  //mpreal X=Y; //NOTICE THIS XXXX
             HE = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
             HO = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
 
@@ -242,7 +259,7 @@ int main(int argc, char** argv) {
             if (WRITE_ENERGIES)
                 outEs.open((label + "_energies").c_str(), std::ios::trunc);
 
-            if (WRITE_OVERLAPS or WRITE_ALL_DECAY) {
+            if (WRITE_OVERLAPS or WRITE_ALL_DECAY or WRITE_STATE_DECAY or WRITE_FINITE_T_DECAY) {
                 Arrayww overlap = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
                 for (int ispec = 0; ispec < pows2(width - 1); ispec++) {
                     auto spec = evecsE.col(ispec).array();
@@ -267,6 +284,47 @@ int main(int argc, char** argv) {
                 outoverlaps.flush();
                 outoverlaps.close();
                 }
+		if (WRITE_STATE_DECAY){
+		  Arrayw toverlaps (tparams.numPoints);
+		  Arrayw stateoverlap = overlap.row(tstate).array().square();
+                    Arrayw alleigdiff(pows2(width-1));
+                    for (ulong i = 0; i < pows2(width - 1); i++) {
+                            alleigdiff[i] = eigsE[tstate] - eigsO[i];
+                        }
+                    auto tfunc = [&](mpreal t, int j) {
+		      toverlaps[j] = ((stateoverlap*alleigdiff.unaryExpr([ = ](mpreal x){return cos(x * t);}))).sum();
+		      return false;
+                    };
+                    tfor.loop(tfunc, tparams);
+                    plotter.writeToFile(label+"_state_"+to_string(tstate)+"_decay", ts, toverlaps);
+                }
+		if (WRITE_FINITE_T_DECAY) {
+		  Arrayw toverlaps(tparams.numPoints);
+		  overlap = overlap.array().square();
+		  auto Tfunc = [&](mpreal T, int j) {
+                    Arrayww alleigdiff(pows2(width - 1), pows2(width - 1));
+		    Arrayw eweights(pows2(width - 1)); 
+                    for (ulong i = 0; i < pows2(width - 1); i++) {
+		      eweights(i) = exp(-eigsE[i]/T) + exp(-eigsO[i]/T);
+                        for (ulong j = 0; j < pows2(width - 1); j++) {
+			  alleigdiff(i, j) = eigsE[j] - eigsO[i];
+                        }
+                    }
+		    mpreal zdenom = eweights.sum();
+                    auto tfunc = [&](mpreal t, int j) {
+		      toverlaps[j] = (((overlap.array()
+					* alleigdiff.unaryExpr([ = ](mpreal x){return cos(x * t);})).colwise().sum().transpose()
+				      *eweights
+				       ).sum())
+				      / (mpreal) zdenom;
+                        return false;
+                    };
+                    tfor.loop(tfunc, tparams);
+                    plotter.writeToFile(label +"_T_"+to_string(T)+ "_long_decay", ts, toverlaps);
+		    return false;
+		  };
+		  Tfor.loop(Tfunc, Tparams);
+		}
                 if (WRITE_ALL_DECAY){
                     Arrayw toverlaps (tparams.numPoints);
                     overlap = overlap.array().square();
