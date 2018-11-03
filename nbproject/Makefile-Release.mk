@@ -67,8 +67,8 @@ OBJECTFILES= \
 CFLAGS=
 
 # CC Compiler Flags
-CCFLAGS=-m64 -lmpfr -lgmp -march=native -Ofast -pthread -Wno-ignored-attributes
-CXXFLAGS=-m64 -lmpfr -lgmp -march=native -Ofast -pthread -Wno-ignored-attributes
+CCFLAGS=-m64 -lmpfr -lgmp -march=native -Ofast -pthread -no-pie
+CXXFLAGS=-m64 -lmpfr -lgmp -march=native -Ofast -pthread -no-pie
 
 # Fortran Compiler Flags
 FFLAGS=

@@ -142,9 +142,9 @@ int main(int argc, char** argv) {
     typedef Eigen::Array<mpreal, Eigen::Dynamic, Eigen::Dynamic> Arrayww;
 
     
-    const mpreal Y = 0.0;
+    const mpreal Y = 0.3;
     const mpreal Z = 1.0;
-    const mpreal X = 0.3;
+    const mpreal X = 0.2;
     const mpreal stag = 0.0;
     const mpreal stagz = 0.0;
 
@@ -162,7 +162,7 @@ int main(int argc, char** argv) {
     NumMethod::GetXFor<mpreal> recordx;
     NumMethod::EqualSpaceFor couplingsfor;
     fparams.start = 0.0;
-    fparams.end = 1.0;
+    fparams.end = 0.2;
     fparams.numPoints = 11;
 
     if (CMD_LINE_PARAMS)
@@ -219,7 +219,7 @@ int main(int argc, char** argv) {
             sigz2[i] = i % 4 < 2 ? 1 : -1;
         }
 
-        auto couplingsbody = [&](mpreal Y, int j) {
+        auto couplingsbody = [&](mpreal stag, int j) {
 	  //mpreal X=Y; //NOTICE THIS XXXX
             HE = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
             HO = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
