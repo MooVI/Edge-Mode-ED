@@ -136,9 +136,12 @@ int main(int argc, char** argv) {
 
   const bool FAKE_BCS = false;
   const bool FAKE_END_GAMMA = false;
-  const bool LONG_RANGE = true;
+  const bool LONG_RANGE = false;
 
   const bool X1_Z2_EDGE = false;
+  const bool X1_EDGE = false;
+  const bool Y1_EDGE = false;
+  const bool Y1_Z2_EDGE = false;
 
   const bool WRITE_ENERGIES = false;
   const bool WRITE_OVERLAPS = false;
@@ -147,18 +150,19 @@ int main(int argc, char** argv) {
   const bool WRITE_VARS = false;
   const bool WRITE_MAX_OVERLAPS = false;
   const bool WRITE_PAIRED_EDIFFS = false;
-  const bool WRITE_ALL_DECAY = false;
+  const bool WRITE_ALL_DECAY = true;
   const bool WRITE_PAIRED_DECAY = false;
   const bool WRITE_ALL_LEVEL_SPACINGS = false;
   const bool WRITE_MEAN_LEVEL_SPACINGS = false;
   const bool WRITE_CORR = false;
+  const bool WRITE_FINITE_T_CORR = false;
   const bool WRITE_BULK_DECAY = false;
-  const bool WRITE_FINITE_T_BULK_DECAY = true;
-  const bool WRITE_BULK_STATE_DECAY = true;
+  const bool WRITE_FINITE_T_BULK_DECAY = false;
+  const bool WRITE_BULK_STATE_DECAY = false;
   const bool WRITE_ALL_SPIN_DECAYS = false;
 
-  const bool WRITE_FINITE_T_DECAY = true;
-  const bool WRITE_STATE_DECAY = true;
+  const bool WRITE_FINITE_T_DECAY = false;
+  const bool WRITE_STATE_DECAY = false;
 
   const bool FINITE_TEMPERATURE = false;
   const bool FINITE_TEMPERATURE_LOOP = false;
@@ -177,12 +181,12 @@ int main(int argc, char** argv) {
   const mpreal theta = 0.0;
   const int staggered = 0;
   const mpreal mag = 0.0;
-  const mpreal J2 = 0.0;
+  const mpreal J2 = 0.00;
   const mpreal J3 = 0.0;
   const mpreal J4 = 0.0;
   const mpreal Jy = 0.0;
   const mpreal J = 1.0;
-  const mpreal f = 0.2;
+  const mpreal f = 0.05;
   const mpreal f_fake_end = 10;
   const mpreal V = 0.00;
   const mpreal alpha = 0;
@@ -234,10 +238,10 @@ int main(int argc, char** argv) {
   NumMethod::EqualSpaceFor Tfor;
   NumMethod::ForLoopParams<mpreal> Tparams;
   std::vector<mpreal> Ts;
-  if (FINITE_TEMPERATURE_LOOP | WRITE_FINITE_T_DECAY) {
+  if (FINITE_TEMPERATURE_LOOP | WRITE_FINITE_T_DECAY | WRITE_FINITE_T_CORR) {
     Tparams.start = 0.25;
-    Tparams.end = 2.00;
-    Tparams.numPoints = 8;
+    Tparams.end = 7.0;
+    Tparams.numPoints = 28;
     Tfor.loop(recordx, Tparams);
     Ts = recordx.get_x();
     recordx.clear();
@@ -258,7 +262,7 @@ int main(int argc, char** argv) {
     
   auto body = [&](int width, int i) {
 
-
+    int tstate = pows2(width-1)-4; //NOTICE THIS!!!!!
 
     Arrayw moverlaps(pows2(width - 1)), meigdiff(pows2(width - 1));
 
@@ -274,7 +278,7 @@ int main(int argc, char** argv) {
       sigz2[i] = i % 4 < 2 ? 1 : -1;
     }
 
-    auto couplingsbody = [&](mpreal alpha, int j) {
+    auto couplingsbody = [&](mpreal J2, int j) {
       // mpreal f = mag*cos(theta);
       //mpreal V = mag*sin(theta);
       //mpreal f = 1*V; //XXXXXX notice this!
@@ -379,13 +383,25 @@ int main(int argc, char** argv) {
       auto evecsE = esE.eigenvectors();
       auto evecsO = esO.eigenvectors();
       mpreal partE;
-      std::string label = "Ising_L_" + to_string(width) + "_f_" + to_string(f)
-      + "_alpha_" + to_string(alpha);
-
+      std::string qtype = "";
+      if (X1_Z2_EDGE){
+        qtype = "_x1z2";
+      }
+      else if (Y1_Z2_EDGE){
+          qtype = "_y1z2";
+      }
+      else if (Y1_EDGE){
+          qtype = "_y1";
+      }
+      else if (X1_EDGE){
+        qtype = "_x1";
+      }
+      std::string label = "Ising_qbit"+qtype+"_L_" + to_string(width) + "_f_" + to_string(f)
+      + "_V_" + to_string(V)+ "_J2_" + to_string(J2) + "_J_" + to_string(J); 
       std::ofstream outEs;
       if (WRITE_ENERGIES)
 	outEs.open((label + "_energies").c_str(), std::ios::trunc);
-      if (X1_Z2_EDGE){
+      if (X1_Z2_EDGE or Y1_Z2_EDGE or X1_EDGE or Y1_EDGE){
 	for (int i = 0; i < pows2(width-2); i++) {
 	  evecsO.row(2*i).swap(evecsO.row(2*i+1));
 	}
@@ -395,14 +411,29 @@ int main(int argc, char** argv) {
 	Arrayww overlap = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
 	for (int ispec = 0; ispec < pows2(width - 1); ispec++) {
 	  auto spec = evecsE.col(ispec).array();
-	  if (not X1_Z2_EDGE){
+	  if (not (X1_Z2_EDGE or Y1_Z2_EDGE or X1_EDGE or Y1_EDGE)){
 	    for (int i = 0; i <  pows2(width-1); i++) {
 	      overlap(i, ispec) = (spec * sigz * evecsO.col(i).array()).sum();
 	    }
 	  }
-	  else{
+	  else if (X1_Z2_EDGE){
 	    for (int i = 0; i < pows2(width-1); i++) {
 	      overlap(i, ispec) = (spec * sigz2 * evecsO.col(i).array()).sum();
+	    }
+	  }
+          else if (X1_EDGE){
+            for (int i = 0; i < pows2(width-1); i++) {
+	      overlap(i, ispec) = (spec * evecsO.col(i).array()).sum();
+            }
+          }
+          else if(Y1_Z2_EDGE) {
+	    for (int i = 0; i < pows2(width-1); i++) {
+	      overlap(i, ispec) = (spec * sigz2 * sigz * evecsO.col(i).array()).sum(); //sigz1 gives the (-1¸ 1) part of y1
+	    }
+	  }
+           else if(Y1_EDGE) {
+	    for (int i = 0; i < pows2(width-1); i++) {
+	      overlap(i, ispec) = (spec * sigz * evecsO.col(i).array()).sum(); //sigz1 gives the (-1¸ 1) part of y1
 	    }
 	  }
 	  int maxind;
@@ -493,12 +524,12 @@ int main(int argc, char** argv) {
 	Arrayw overlap = Vectorw::Zero(pows2(width - 1));
 	for (int ispec = 0; ispec < pows2(width - 1); ispec++) {
 	  auto spec = evecsE.col(ispec).array();
-	  if (not X1_Z2_EDGE){
+	  if (not (X1_Z2_EDGE or Y1_Z2_EDGE)){
 	    for (int i = 0; i <  pows2(width-1); i++) {
 	      overlap(i) = (spec * sigz * evecsO.col(i).array()).sum();
 	    }
 	  }
-	  else{
+	  else {
 	    for (int i = 0; i < pows2(width-1); i++) {
 	      overlap(i) = (spec * sigz2 * evecsO.col(i).array()).sum();
 	    }
@@ -729,7 +760,7 @@ int main(int argc, char** argv) {
 	Arrayww overlap = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
 	Arrayw sigz1xL(pows2(width - 1));
 	for (int i = 0; i < sigz1xL.size(); i++) {
-	    sigz1xL[i] = (2 * ((i & pows2(width-1)) >> width) - 1)*sigz[i];
+	  sigz1xL[i] = (2 * ((i & pows2(width-1)) >> (width-1)) - 1)*sigz[i];
 	  }
 	for (int ispec = 0; ispec < pows2(width - 1); ispec++) {
 	  auto spec = evecsE.col(ispec).array();
@@ -738,6 +769,31 @@ int main(int argc, char** argv) {
 	    }
 	}
 	correlations.push_back(overlap.mean());
+      }
+      if (WRITE_FINITE_T_CORR){
+	Arrayww overlap = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
+	Arrayw Tcorr(Tparams.numPoints);
+	Arrayw sigz1xL(pows2(width - 1));
+	for (int i = 0; i < sigz1xL.size(); i++) {
+	  sigz1xL[i] = (2 * ((i & pows2(width-1)) >> (width-1)) - 1)*sigz[i];
+	}
+	auto Tfunc = [&](mpreal T, int j) {
+	  Arrayw eweights(pows2(width - 1)); 
+	  for (ulong i = 0; i < pows2(width - 1); i++) {
+	    eweights(i) = exp(-eigsE[i]/T) + exp(-eigsO[i]/T);
+	  }
+	  mpreal zdenom = eweights.sum();
+	  for (int ispec = 0; ispec < pows2(width - 1); ispec++) {
+	    auto spec = evecsE.col(ispec).array();
+	    for (int i = 0; i < pows2(width-1); i++) {
+	      overlap(i, ispec) = -(spec * sigz1xL * evecsE.col(i).array()).sum()*eweights(i);
+	    }
+	  }
+	  Tcorr[j] = overlap.sum()/zdenom;
+	  return false;
+	};
+	Tfor.loop(Tfunc, Tparams);
+	plotter.writeToFile(label +"_finite_T_corr", Ts, Tcorr);
       }
       if (WRITE_MEANS) {
 	if (FINITE_TEMPERATURE){
@@ -767,7 +823,7 @@ int main(int argc, char** argv) {
     };
     couplingsfor.loop(couplingsbody, fparams);
 
-    std::string label = hashlabel + "Ising_fake_bcs_V_f_L_" + to_string(width);
+    std::string label = hashlabel + "Ising_anti_V_f_L_" + to_string(width);
     //+ "_f_" + to_string(f);
     if (WRITE_MEANS) {
       plotter.writeToFile(label + "_meanoverlap", fs, maxoverlap);
