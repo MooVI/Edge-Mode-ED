@@ -112,6 +112,29 @@ inline int sigma_y_j_y_m(ulong x, ulong y, ulong j, ulong m, powersoftwo<N> pows
              *(2*(((y & pows(j)) >> j) ^ ((y & pows(m)) >> m))-1);
 }
 
+template <int N>
+inline int sigma_x_j_x_k_y_l_y_m(ulong x, ulong y, ulong j, ulong k, ulong l, ulong m,  powersoftwo<N> pows, const int width, const int ignoremask) {
+    //assumes j,k,l,m different
+    return 
+            ( 
+            (x == (y^pows(j)^pows(m)^pows(l)^pows(k)))
+            or
+            ( (j == width-1) and ((x | ignoremask) == ((~(y^pows(m)^pows(l)^pows(k))) | ignoremask)))
+            or
+            ( (m == width-1) and ((x | ignoremask) == ((~(y^pows(j)^pows(l)^pows(k))) | ignoremask)))
+            or
+            ( (k == width-1) and ((x | ignoremask) == ((~(y^pows(j)^pows(l)^pows(m))) | ignoremask)))
+            or
+            ( (l == width-1) and ((x | ignoremask) == ((~(y^pows(j)^pows(m)^pows(k))) | ignoremask)))
+            )*(-2 * ((pows(l) & y & pows(width-1)) >> (width-1)) + 1)
+             *(-2 * ((pows(m) & y & pows(width-1)) >> (width-1)) + 1)
+             *(2*(((y & pows(l)) >> l) ^ ((y & pows(m)) >> m))-1)
+            *(-2 * ((pows(j) & y & pows(width - 1)) >> (width - 1)) + 1)
+            *(-2 * ((pows(k) & y & pows(width - 1)) >> (width - 1)) + 1);
+            
+}
+
+
 template<typename T>
 std::string to_string(T value) {
     return std::to_string(value);
@@ -165,7 +188,7 @@ int main(int argc, char** argv) {
     std::vector<mpreal> gaps;
     std::vector<mpreal> gaps2;
     std::vector<mpreal> genergy;
-    std::vector<mpreal> corrs;
+    std::vector<mpreal> corrsZ, corrsX, corrsXY;
 
     if (CMD_LINE_PARAMS)
         fparams = NumMethod::get_for_from_cmd<mpreal>(argv);
@@ -269,9 +292,27 @@ int main(int argc, char** argv) {
                 outEs.flush();
                 outEs.close();
             }
+            Matrixww zz(pows2(2*width-1), pows2(2*width-1));
+            Matrixww xx(pows2(2*width-1), pows2(2*width-1));
+            Matrixww xy_rung(pows2(2*width-1), pows2(2*width-1));
+            
+            zz = Matrixww::Zero(pows2(nbulk), pows2(nbulk));
+            xx = Matrixww::Zero(pows2(nbulk), pows2(nbulk));
+            xy_rung = Matrixww::Zero(pows2(nbulk), pows2(nbulk));
+            
+            //Construct operators
+            for (ulong i = 0; i < pows2(nbulk); i++) {
+                for (ulong j = 0; j < pows2(nbulk); j++) {
+                    zz(i, j) += sigma_z_j_z_m(i, j, 0, 2*width-1, pows2);
+                    xx(i, j) += sigma_x_j_x_m(i, j,0, 2*width-1, pows2, 2*width, ignoremask);
+                    xy_rung(i, j) += sigma_x_j_x_k_y_l_y_m(i, j, 0, 2*width-2,1, 2*width-1, pows2, 2*width, ignoremask);
+                }
+            }
             genergy.push_back(eigsE[0]);
             gaps.push_back((eigsE[1]-eigsE[0]));
-            corrs.push_back((evecsE.col(0).array()*sigz2zn*evecsE.col(0).array()).sum());
+            corrsZ.push_back((evecsE.col(0).adjoint()*zz*evecsE.col(0)).value());
+            corrsX.push_back((evecsE.col(0).adjoint()*xx*evecsE.col(0)).value());
+            corrsXY.push_back((evecsE.col(0).adjoint()*xy_rung*evecsE.col(0)).value());
             return false;
         };
         couplingsfor.loop(couplingsbody, fparams);
@@ -284,11 +325,12 @@ int main(int argc, char** argv) {
          
     plotter.writeToFile(label + "_genergy", fs, genergy);
     plotter.writeToFile(label + "_gaps", fs, gaps);
-    plotter.writeToFile(label + "_corrs", fs, corrs);
-   // plotter.writeToFile(label + "_corrsX", fs, corrsX);
+    plotter.writeToFile(label + "_corrsZ", fs, corrsZ);
+    plotter.writeToFile(label + "_corrsX", fs, corrsX);
+    plotter.writeToFile(label + "_corrsXY_rung", fs, corrsXY);
         return false;
     };
-
+    
     NumMethod::Range forloop;
     forloop.loop(body, begin, end, 2);
    
