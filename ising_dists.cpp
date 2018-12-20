@@ -5,15 +5,16 @@
  * Created on 13 October 2014, 11:54
  */
 
-#if 0
+#if 1
 
 #include<Eigen/Dense>
-#include<Eigen/MPRealSupport>
+//#include<Eigen/MPRealSupport>
 #include<NumericalMethods/NumericalMethods/Random.h>
 #include<NumericalMethods/NumericalMethods/Statistics.h>
 #include<NumericalMethods/NumericalMethods/SamplingForLoops.h>
 #include<NumericalMethods/NumericalMethods/Mod.h>
 #include<NumericalMethods/NumericalMethods/Useful.h>
+#include<NumericalMethods/NumericalMethods/1DRootFinding.h>
 #include<Plotting/Plotter/Plotter.h>
 #include<iostream>
 #include<mpreal.h>
@@ -150,7 +151,8 @@ int main(int argc, char** argv) {
   const bool WRITE_VARS = false;
   const bool WRITE_MAX_OVERLAPS = false;
   const bool WRITE_PAIRED_EDIFFS = false;
-  const bool WRITE_ALL_DECAY = true;
+  const bool WRITE_ALL_DECAY = false;
+  const bool WRITE_DECAY_TIME = true;
   const bool WRITE_PAIRED_DECAY = false;
   const bool WRITE_ALL_LEVEL_SPACINGS = false;
   const bool WRITE_MEAN_LEVEL_SPACINGS = false;
@@ -183,12 +185,12 @@ int main(int argc, char** argv) {
   const mpreal mag = 0.0;
   const mpreal J2 = 0.00;
   const mpreal J3 = 0.0;
-  const mpreal J4 = 0.0;
+  const mpreal J4 = 1.0;
   const mpreal Jy = 0.0;
-  const mpreal J = 1.0;
+  const mpreal J = 0.0;
   const mpreal f = 0.05;
   const mpreal f_fake_end = 10;
-  const mpreal V = 0.00;
+  const mpreal V = 0.05;
   const mpreal alpha = 0;
   const mpreal Js [] = {J3, J4};
 
@@ -205,6 +207,20 @@ int main(int argc, char** argv) {
   if (CMD_LINE_PARAMS and argc > 4)
     hashlabel = std::string(argv[4]);
 
+  std::string qtype = "";
+      if (X1_Z2_EDGE){
+        qtype = "_x1z2";
+      }
+      else if (Y1_Z2_EDGE){
+          qtype = "_y1z2";
+      }
+      else if (Y1_EDGE){
+          qtype = "_y1";
+      }
+      else if (X1_EDGE){
+        qtype = "_x1";
+      }
+
   NumMethod::ForLoopParams<mpreal> fparams;
   NumMethod::GetXFor<mpreal> recordx;
   NumMethod::EqualSpaceFor couplingsfor;
@@ -216,11 +232,19 @@ int main(int argc, char** argv) {
     fparams = NumMethod::get_for_from_cmd<mpreal>(argv);
 
 
-  std::vector<mpfr::mpreal> maxoverlap, eigdiffs, varoverlaps, vareigdiffs, meanspacings, correlations;
+  std::vector<mpfr::mpreal> maxoverlap, eigdiffs, varoverlaps;
+  std::vector<mpfr::mpreal> vareigdiffs, meanspacings, correlations;
+  std::vector<mpfr::mpreal> decay_times;
+  
   std::vector<mpreal> fs;
   couplingsfor.loop(recordx, fparams);
   fs = recordx.get_x();
   recordx.clear();
+
+  NumMethod::Brent rootfinder;
+  mpreal root_min_time = 1;
+  mpreal root_max_time = 1e9;
+  mpreal root_error = 10;
 
   const int tstate = 0;
   NumMethod::LogFor tfor;
@@ -278,10 +302,11 @@ int main(int argc, char** argv) {
       sigz2[i] = i % 4 < 2 ? 1 : -1;
     }
 
-    auto couplingsbody = [&](mpreal J2, int j) {
+    auto couplingsbody = [&](mpreal J3, int j) {
       // mpreal f = mag*cos(theta);
       //mpreal V = mag*sin(theta);
       //mpreal f = 1*V; //XXXXXX notice this!
+      //                     mpreal f = J2;
       mpreal beta = 1.0/T;
       const mpreal Js [] = {J3, J4};
       std::vector<mpreal> J2s(width);
@@ -383,19 +408,6 @@ int main(int argc, char** argv) {
       auto evecsE = esE.eigenvectors();
       auto evecsO = esO.eigenvectors();
       mpreal partE;
-      std::string qtype = "";
-      if (X1_Z2_EDGE){
-        qtype = "_x1z2";
-      }
-      else if (Y1_Z2_EDGE){
-          qtype = "_y1z2";
-      }
-      else if (Y1_EDGE){
-          qtype = "_y1";
-      }
-      else if (X1_EDGE){
-        qtype = "_x1";
-      }
       std::string label = "Ising_qbit"+qtype+"_L_" + to_string(width) + "_f_" + to_string(f)
       + "_V_" + to_string(V)+ "_J2_" + to_string(J2) + "_J_" + to_string(J); 
       std::ofstream outEs;
@@ -407,7 +419,7 @@ int main(int argc, char** argv) {
 	}
       }
       if (WRITE_OVERLAPS or WRITE_ALL_DECAY or WRITE_FINITE_T_DECAY
-	  or WRITE_STATE_DECAY) {
+	  or WRITE_STATE_DECAY or WRITE_DECAY_TIME) {
 	Arrayww overlap = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
 	for (int ispec = 0; ispec < pows2(width - 1); ispec++) {
 	  auto spec = evecsE.col(ispec).array();
@@ -489,6 +501,24 @@ int main(int argc, char** argv) {
 	  };
 	  tfor.loop(tfunc, tparams);
 	  plotter.writeToFile(label + "_long_decay", ts, toverlaps);
+	}
+        if (WRITE_DECAY_TIME) {
+	  if (not WRITE_ALL_DECAY){
+            overlap = overlap.array().square();
+          }
+	  Arrayww alleigdiff(pows2(width - 1), pows2(width - 1));
+	  for (ulong i = 0; i < pows2(width - 1); i++) {
+	    for (ulong j = 0; j < pows2(width - 1); j++) {
+	      alleigdiff(i, j) = eigsE[j] - eigsO[i];
+	    }
+	  }
+	  auto tfunc = [&](mpreal t) {
+                         return (((overlap.array()
+                                   * alleigdiff.unaryExpr(
+                                                          [ = ](mpreal x){return cos(x * t);})).sum() / (mpreal) pows2(width - 1)))-exp(-1);
+	  };
+          decay_times.push_back(rootfinder(tfunc, root_min_time, root_max_time, root_error));
+          std::cout<<"TIME:"<<std::endl<<decay_times.back()<<std::endl;
 	}
 	if (WRITE_FINITE_T_DECAY) {
 	  Arrayw toverlaps(tparams.numPoints);
@@ -823,7 +853,8 @@ int main(int argc, char** argv) {
     };
     couplingsfor.loop(couplingsbody, fparams);
 
-    std::string label = hashlabel + "Ising_anti_V_f_L_" + to_string(width);
+    std::string label = hashlabel + "Chris_qbit"+qtype+"_L_" + to_string(width) + "_f_" + to_string(f)
+      + "_V_" + to_string(V)+ "_J3_" + to_string(J3) + "_J_" + to_string(J4); 
     //+ "_f_" + to_string(f);
     if (WRITE_MEANS) {
       plotter.writeToFile(label + "_meanoverlap", fs, maxoverlap);
@@ -844,6 +875,10 @@ int main(int argc, char** argv) {
     if (WRITE_CORR){
       plotter.writeToFile(label + "_corr", fs, correlations);
       correlations.clear();
+    }
+    if (WRITE_DECAY_TIME){
+      plotter.writeToFile(label + "_decay_time", fs, decay_times);
+      decay_times.clear();
     }
     return false;
   };
