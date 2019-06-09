@@ -140,6 +140,7 @@ int main(int argc, char** argv) {
   const bool LONG_RANGE = false;
 
   const bool X1_Z2_EDGE = false;
+  const bool Y1_Y2_Z3_EDGE = false;
   const bool X1_EDGE = false;
   const bool Y1_EDGE = false;
   const bool Y1_Z2_EDGE = false;
@@ -151,8 +152,8 @@ int main(int argc, char** argv) {
   const bool WRITE_VARS = false;
   const bool WRITE_MAX_OVERLAPS = false;
   const bool WRITE_PAIRED_EDIFFS = false;
-  const bool WRITE_ALL_DECAY = false;
-  const bool WRITE_DECAY_TIME = true;
+  const bool WRITE_ALL_DECAY = true;
+  const bool WRITE_DECAY_TIME = false;
   const bool WRITE_PAIRED_DECAY = false;
   const bool WRITE_ALL_LEVEL_SPACINGS = false;
   const bool WRITE_MEAN_LEVEL_SPACINGS = false;
@@ -185,12 +186,12 @@ int main(int argc, char** argv) {
   const mpreal mag = 0.0;
   const mpreal J2 = 0.00;
   const mpreal J3 = 0.0;
-  const mpreal J4 = 1.0;
+  const mpreal J4 = 0.0;
   const mpreal Jy = 0.0;
-  const mpreal J = 0.0;
-  const mpreal f = 0.05;
+  const mpreal J = 1.0;
+  const mpreal f = 0.25;
   const mpreal f_fake_end = 10;
-  const mpreal V = 0.05;
+  const mpreal V = 0.0;
   const mpreal alpha = 0;
   const mpreal Js [] = {J3, J4};
 
@@ -220,6 +221,9 @@ int main(int argc, char** argv) {
       else if (X1_EDGE){
         qtype = "_x1";
       }
+      else if (Y1_Y2_Z3_EDGE){
+        qtype = "_y1y2z3";
+      }
 
   NumMethod::ForLoopParams<mpreal> fparams;
   NumMethod::GetXFor<mpreal> recordx;
@@ -247,12 +251,13 @@ int main(int argc, char** argv) {
   mpreal root_error = 10;
 
   const int tstate = 0;
-  NumMethod::LogFor tfor;
+  NumMethod::EqualSpaceFor tfor;
   NumMethod::ForLoopParams<mpreal> tparams;
   std::vector<mpreal> ts;
+  std::vector<mpreal> tends = {1e6,1e7,1e8,1e9};
   if (WRITE_ALL_DECAY | WRITE_PAIRED_DECAY | WRITE_FINITE_T_DECAY | WRITE_STATE_DECAY | WRITE_BULK_DECAY | WRITE_ALL_SPIN_DECAYS) {
-    tparams.start = 0.1;
-    tparams.end = 1e8;
+    tparams.start = 0.0;
+    //tparams.end = 1e6;
     tparams.numPoints = 5001;
     tfor.loop(recordx, tparams);
     ts = recordx.get_x();
@@ -286,6 +291,7 @@ int main(int argc, char** argv) {
     
   auto body = [&](int width, int i) {
 
+    tparams.end = tends[i];
     int tstate = pows2(width-1)-4; //NOTICE THIS!!!!!
 
     Arrayw moverlaps(pows2(width - 1)), meigdiff(pows2(width - 1));
@@ -297,12 +303,14 @@ int main(int argc, char** argv) {
 
     Arrayw sigz(pows2(width - 1));
     Arrayw sigz2(pows2(width - 1));
+    Arrayw sigz3(pows2(width - 1));
     for (int i = 0; i < sigz.size(); i++) {
       sigz[i] = i % 2 == 0 ? 1 : -1;
       sigz2[i] = i % 4 < 2 ? 1 : -1;
+      sigz3[i] = i % 8 < 4 ? 1 : -1;
     }
 
-    auto couplingsbody = [&](mpreal J3, int j) {
+    auto couplingsbody = [&](mpreal f, int j) {
       // mpreal f = mag*cos(theta);
       //mpreal V = mag*sin(theta);
       //mpreal f = 1*V; //XXXXXX notice this!
@@ -310,6 +318,12 @@ int main(int argc, char** argv) {
       mpreal beta = 1.0/T;
       const mpreal Js [] = {J3, J4};
       std::vector<mpreal> J2s(width);
+      tparams.end = 10*3.14/((1-f*f)*pow(f,width));// NOTICE THIS!
+      if (WRITE_ALL_DECAY | WRITE_PAIRED_DECAY | WRITE_FINITE_T_DECAY | WRITE_STATE_DECAY | WRITE_BULK_DECAY | WRITE_ALL_SPIN_DECAYS) {
+        tfor.loop(recordx, tparams);
+        ts = recordx.get_x();
+        recordx.clear();
+      }
 
       for (int i = 0; i < width; ++i)
 	J2s[i] = J2;
@@ -408,14 +422,20 @@ int main(int argc, char** argv) {
       auto evecsE = esE.eigenvectors();
       auto evecsO = esO.eigenvectors();
       mpreal partE;
-      std::string label = "Ising_qbit"+qtype+"_L_" + to_string(width) + "_f_" + to_string(f)
+      std::string label = "Ising_equalspacefreq"+qtype+"_L_" + to_string(width) + "_f_" + to_string(f)
       + "_V_" + to_string(V)+ "_J2_" + to_string(J2) + "_J_" + to_string(J); 
       std::ofstream outEs;
       if (WRITE_ENERGIES)
 	outEs.open((label + "_energies").c_str(), std::ios::trunc);
-      if (X1_Z2_EDGE or Y1_Z2_EDGE or X1_EDGE or Y1_EDGE){
+      if (X1_Z2_EDGE or Y1_Z2_EDGE or X1_EDGE or Y1_EDGE or Y1_Y2_Z3_EDGE){
 	for (int i = 0; i < pows2(width-2); i++) {
 	  evecsO.row(2*i).swap(evecsO.row(2*i+1));
+	}
+      }
+      if (Y1_Y2_Z3_EDGE){
+	for (int i = 0; (4*i+3) < pows2(width-1); i++) {
+	  evecsO.row(4*i).swap(evecsO.row(4*i+2));
+          evecsO.row(4*i+1).swap(evecsO.row(4*i+3));
 	}
       }
       if (WRITE_OVERLAPS or WRITE_ALL_DECAY or WRITE_FINITE_T_DECAY
@@ -423,7 +443,7 @@ int main(int argc, char** argv) {
 	Arrayww overlap = Matrixww::Zero(pows2(width - 1), pows2(width - 1));
 	for (int ispec = 0; ispec < pows2(width - 1); ispec++) {
 	  auto spec = evecsE.col(ispec).array();
-	  if (not (X1_Z2_EDGE or Y1_Z2_EDGE or X1_EDGE or Y1_EDGE)){
+	  if (not (X1_Z2_EDGE or Y1_Z2_EDGE or X1_EDGE or Y1_EDGE or Y1_Y2_Z3_EDGE)){
 	    for (int i = 0; i <  pows2(width-1); i++) {
 	      overlap(i, ispec) = (spec * sigz * evecsO.col(i).array()).sum();
 	    }
@@ -448,6 +468,11 @@ int main(int argc, char** argv) {
 	      overlap(i, ispec) = (spec * sigz * evecsO.col(i).array()).sum(); //sigz1 gives the (-1¸ 1) part of y1
 	    }
 	  }
+           else if(Y1_Y2_Z3_EDGE) {
+	    for (int i = 0; i < pows2(width-1); i++) {
+	      overlap(i, ispec) = (-spec * sigz3 * sigz2 * sigz * evecsO.col(i).array()).sum(); //sigz1 gives the (-1¸ 1) part of y1
+	    }
+           }
 	  int maxind;
 	  moverlaps[ispec] = overlap.col(ispec).abs().maxCoeff(&maxind);
 	  meigdiff[ispec] = eigsE[ispec] - eigsO[maxind];
@@ -853,8 +878,8 @@ int main(int argc, char** argv) {
     };
     couplingsfor.loop(couplingsbody, fparams);
 
-    std::string label = hashlabel + "Chris_qbit"+qtype+"_L_" + to_string(width) + "_f_" + to_string(f)
-      + "_V_" + to_string(V)+ "_J3_" + to_string(J3) + "_J_" + to_string(J4); 
+    std::string label = hashlabel + "Ising_reson"+qtype+"_L_" + to_string(width) + "_f_" + to_string(f)
+      + "_V_" + to_string(V)+ "_J_" + "vary" + "_J2_" + to_string(J); 
     //+ "_f_" + to_string(f);
     if (WRITE_MEANS) {
       plotter.writeToFile(label + "_meanoverlap", fs, maxoverlap);

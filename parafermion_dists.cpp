@@ -8,7 +8,7 @@
 #if 0
 
 #include<Eigen/Dense>
-#include<Eigen/MPRealSupport>
+//#include<Eigen/MPRealSupport>
 #include<NumericalMethods/NumericalMethods/Random.h>
 #include<NumericalMethods/NumericalMethods/Statistics.h>
 #include<NumericalMethods/NumericalMethods/SamplingForLoops.h>
@@ -210,11 +210,11 @@ int main(int argc, char** argv) {
     const bool WRITE_ENERGIES = false;
     const bool WRITE_OVERLAPS = false;
     const bool WRITE_BULK = false;
-    const bool WRITE_MEANS = true;
-    const bool WRITE_VARS = true;
+    const bool WRITE_MEANS = false;
+    const bool WRITE_VARS = false;
     const bool WRITE_MAX_OVERLAPS = false;
     const bool WRITE_PAIRED_EDIFFS = false;
-    const bool WRITE_ALL_DECAY = false;
+    const bool WRITE_ALL_DECAY = true;
     const bool WRITE_PAIRED_DECAY = false;
     const bool WRITE_ALL_LEVEL_SPACINGS = false;
     const bool WRITE_MEAN_LEVEL_SPACINGS = false;
@@ -233,7 +233,7 @@ int main(int argc, char** argv) {
     typedef Eigen::Array<mpreal, Eigen::Dynamic, 1> Arrayw;
     typedef Eigen::Array<mpreal, Eigen::Dynamic, Eigen::Dynamic> Arrayww;
 
-    const double phi = 0.23;
+    const double phi = 0.0;
     const double theta = 0.4; //pi / 6;
     complex ephi = std::polar(1., phi);
     complex mephi = std::polar(1., -phi);
@@ -247,7 +247,7 @@ int main(int argc, char** argv) {
     NumMethod::RunningStats<mpfr::mpreal> statoverlap, stateigdiff;
     NumMethod::WeightedRunningStats<mpfr::mpreal> wstatoverlap, wstateigdiff;
 
-    const int begin = 9;
+    const int begin = 4;
     const int end = 10;
 
     std::string hashlabel = "";
@@ -271,13 +271,13 @@ int main(int argc, char** argv) {
     fs = recordx.get_x();
     recordx.clear();
 
-    NumMethod::EqualSpaceFor tfor;
+    NumMethod::LogFor tfor;
     NumMethod::ForLoopParams<mpreal> tparams;
     std::vector<mpreal> ts;
     if (WRITE_ALL_DECAY | WRITE_PAIRED_DECAY) {
         tparams.start = 0.01;
-        tparams.end = 1e6;
-        tparams.numPoints = 1000;
+        tparams.end = 1e10;
+        tparams.numPoints = 10001;
         tfor.loop(recordx, tparams);
         ts = recordx.get_x();
         recordx.clear();
@@ -372,7 +372,7 @@ int main(int argc, char** argv) {
             auto evecsO = esO.eigenvectors();
             mpreal partE;
             std::string label = "parafermion_L_" + to_string(width) + "_f_" + to_string(f)
-                    + "_J_" + to_string(J);
+              + "_J_" + to_string(J)+"_phi_"+to_string(phi)+"_theta_"+to_string(theta);
 
             std::ofstream outEs;
             if (WRITE_ENERGIES)
@@ -419,7 +419,7 @@ int main(int argc, char** argv) {
                         }
                     }
                     auto tfunc = [&](mpreal t, int j) {
-                        toverlaps[j] = ((overlap.array() * alleigdiff.unaryExpr([ = ](mpreal x){return cos(x * t);})).sum() / (mpreal) n3states);
+                                   toverlaps[j] = ((overlap.array() * alleigdiff.unaryExpr([ = ](mpreal x){return cos(x * t);})).sum() / (2*(mpreal) n3states));
                         return false;
                     };
                     tfor.loop(tfunc, tparams);
@@ -602,7 +602,7 @@ int main(int argc, char** argv) {
     };
 
     NumMethod::Range forloop;
-    forloop.loop(body, begin, end, 1);
+    forloop.loop(body, begin, end, 2);
     std::vector<int> widths = forloop.get_x(begin, end);
 
     return 0;
